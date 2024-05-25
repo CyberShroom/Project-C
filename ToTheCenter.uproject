@@ -3,16 +3,6 @@
 	"EngineAssociation": "5.3",
 	"Category": "",
 	"Description": "",
-	"Modules": [
-		{
-			"Name": "ToTheCenter_0",
-			"Type": "Runtime",
-			"LoadingPhase": "Default",
-			"AdditionalDependencies": [
-				"UMG"
-			]
-		}
-	],
 	"Plugins": [
 		{
 			"Name": "ModelingToolsEditorMode",
