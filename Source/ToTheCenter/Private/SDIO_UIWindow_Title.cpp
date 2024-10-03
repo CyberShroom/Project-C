@@ -33,6 +33,7 @@ void USDIO_UIWindow_Title::NativeConstruct()
 
 	UIID = EUIID::TitleUI;
 
+	//Checks that the buttons are loaded
 	if (Singleplayer && Multiplayer && Options && Quit)
 	{
 		//Singleplayer->OnButtonClicked.AddUniqueDynamic(this, &USDIO_UIWindow_Title::StartSingleplayer);

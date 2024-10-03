@@ -16,6 +16,7 @@ class TOTHECENTER_API USDIO_UIWindow_Multiplayer : public UUI_Window
 	GENERATED_BODY()
 	
 protected:
+	////Object References////
 	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
 	class USDIO_UI_TextButton* Host;
 

@@ -15,6 +15,7 @@ class TOTHECENTER_API USDIO_UIManager_Title : public UUI_Manager
 	GENERATED_BODY()
 	
 protected:
+	////Object References////
 	UPROPERTY(BlueprintReadWrite, Category = "Hierarchy References", meta = (BindWidget))
 	class UUI_Window* Title_Window;
 

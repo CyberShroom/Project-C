@@ -16,6 +16,7 @@ class TOTHECENTER_API USDIO_UIWindow_Title : public UUI_Window
 	GENERATED_BODY()
 
 private:
+	////Event Delegates For Text_Buttons////
 	//UFUNCTION()
 	//void StartSingleplayer();
 	UFUNCTION()
@@ -26,6 +27,7 @@ private:
 	//void ExitGame();
 
 protected:
+	////Object References////
 	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
 	class USDIO_UI_TextButton* Singleplayer;
 

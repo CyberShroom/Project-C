@@ -9,6 +9,7 @@ void USDIO_UIManager_Title::NativeConstruct()
 
 	defaultUI = EUIID::TitleUI;
 
+	//Checks if objects are loaded
 	if (Title_Window && Multiplayer_Window && Options_Window)
 	{
 		UIList.Add(Title_Window);
