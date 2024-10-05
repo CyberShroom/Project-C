@@ -85,14 +85,14 @@ void UUI_Manager::InitializeManager(USDIO_UIWindow_Options*& optionsUI)
 		item->OnSetCurrentUIToDefault.AddUniqueDynamic(this, &UUI_Manager::SetCurrentUIToDefault);
 	}
 	
-	//Checks if the defaultUI is set and loaded. If not, the game will force crash.
+	//Checks if the defaultUI is set and loaded. If not, the game will create an error.
 	if (GetUIFromUIID(defaultUI, defaultWindow))
 	{
 		currentUI = defaultWindow;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Fatal, TEXT("The UI_Manager could not find the default UI, %s, in the UIList."), *UEnum::GetValueAsString(defaultUI));
+		UE_LOG(LogTemp, Error, TEXT("The UI_Manager could not find the default UI, %s, in the UIList."), *UEnum::GetValueAsString(defaultUI));
 	}
 }
 
