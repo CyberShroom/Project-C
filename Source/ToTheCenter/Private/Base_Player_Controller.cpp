@@ -3,15 +3,55 @@
 
 #include "Base_Player_Controller.h"
 
-/*
-void ABase_Player_Controller::BeginPlay()
-{
-	Super::BeginPlay();
+//void ABase_Player_Controller::ClientRPC_AddItemToClientInventory(UTTC_Item* newItem)
+//{
+//
+//}
 
-	if (HasAuthority())
+void ABase_Player_Controller::Initialize()
+{
+	if (GetPawn())
 	{
 		GetPawn()->SetActorLocation(FVector(0.0, 0.0, 0.0));
+		playerShip = Cast<AShip>(GetPawn());
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Failed to find a UShip that belongs to this player controller."));
 	}
 }
-*/
+
+void ABase_Player_Controller::AddItemToInventory(UTTC_Item* newItem)
+{
+	if (HasAuthority())
+	{
+		if (inventoryList.Num() < maxInventorySize)
+		{
+			inventoryList.Add(newItem);
+		}
+
+		if (IsLocalPlayerController())
+		{
+			//CALL INVENTORY UI
+		}
+		else
+		{
+
+		}
+	}
+}
+
+uint8 ABase_Player_Controller::GetMaxInventorySize() const
+{
+	return maxInventorySize;
+}
+
+void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABase_Player_Controller, moveSpeed);
+	DOREPLIFETIME(ABase_Player_Controller, turnSpeed);
+	DOREPLIFETIME(ABase_Player_Controller, inventoryList);
+}
 

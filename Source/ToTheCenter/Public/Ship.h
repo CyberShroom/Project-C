@@ -4,7 +4,8 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Pawn.h"
-//#include "TTC_Item.h"
+#include "TTC_Item.h"
+#include "Camera/CameraComponent.h"
 #include "Ship.generated.h"
 
 UCLASS()
@@ -17,6 +18,13 @@ public:
 	AShip();
 
 protected:
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
+	USceneComponent* scene;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
+	UCameraComponent* camera;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -29,8 +37,16 @@ protected:
 	float turnSpeed = 100.0;
 
 	/// <summary>An array of items used by the ship. 0-3 are projectiles and 4-7 are weapons.</summary>
-	//UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "An array of items used by the ship. 0-3 are projectiles and 4-7 are weapons."))
-	//TArray<FTTC_Item> hotbarList;
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "An array of items used by the ship. 0-3 are projectiles and 4-7 are weapons."))
+	TArray<UTTC_Item*> hotbarList;
+
+	/// <summary>Contains logic for how this ship should move.</summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Ship", meta = (Tooltip = "Tells the ship to move. joystickValue is a modifier between 0 and 1."))
+	virtual void MoveShip(float joystickValue);
+
+	/// <summary>Contains logic for how this ship should turn.</summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
+	virtual void TurnShip(float joystickValue);
 
 public:	
 	// Called every frame
