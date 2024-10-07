@@ -13,7 +13,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryButtonClicked, UInventory_Slot*, slot);
 
-UCLASS()
+UCLASS(meta = (ShortToolTip = "An item slot used for the inventory and hotbar."))
 class TOTHECENTER_API UInventory_Slot : public UItem_Slot
 {
 	GENERATED_BODY()
@@ -34,6 +34,8 @@ protected:
 public:
 	UPROPERTY(BlueprintAssignable, Category = "SDIO_UI | Event Dispatchers", meta = (Tooltip = "An event that, when called, attempts to move items between inventory slots."))
 	FInventoryButtonClicked OnButtonClicked;
+
+	UImage* GetSprite();
 
 	virtual void NativeConstruct() override;
 };

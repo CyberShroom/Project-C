@@ -3,32 +3,27 @@
 
 #include "Item_Slot.h"
 
-void UItem_Slot::SetSprite(UImage* imageObject, UTexture2D* spriteObject)
+void UItem_Slot::SetSprite(UImage* imageObject)
 {
-	imageObject->SetBrushFromTexture(spriteObject);
-
-	if (spriteObject)
+	if (containedItem)
 	{
+		imageObject->SetBrushFromTexture(containedItem->GetSprite());
 		imageObject->SetColorAndOpacity(FLinearColor::White);
 	}
 	else
 	{
+		imageObject->SetBrushFromTexture(nullptr);
 		imageObject->SetColorAndOpacity(FLinearColor(1.0,1.0,1.0,0.0));
 	}
 }
 
-bool UItem_Slot::GetContainedItem(UTTC_Item*& existingItem)
+UTTC_Item* UItem_Slot::GetContainedItem()
 {
-	if (containedItem)
-	{
-		existingItem = containedItem;
-		return true;
-	}
-
-	return false;
+	return containedItem;
 }
 
-void UItem_Slot::SetContainedItem(UTTC_Item* newItem)
+void UItem_Slot::SetContainedItem(UTTC_Item* newItem, UImage* imageObject)
 {
-	//if(type)
+	containedItem = newItem;
+	SetSprite(imageObject);
 }

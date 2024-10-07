@@ -25,18 +25,18 @@ void ABase_Player_Controller::AddItemToInventory(UTTC_Item* newItem)
 {
 	if (HasAuthority())
 	{
-		if (inventoryList.Num() < maxInventorySize)
+		if (inventoryList.Num() < maxInventorySize && inventoryList.Num() < currentInventorySize)
 		{
 			inventoryList.Add(newItem);
 		}
 
 		if (IsLocalPlayerController())
 		{
-			//CALL INVENTORY UI
+			OnPickupItem.Broadcast(newItem);
 		}
 		else
 		{
-
+			//Call clientRPC
 		}
 	}
 }
@@ -53,5 +53,6 @@ void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 	DOREPLIFETIME(ABase_Player_Controller, moveSpeed);
 	DOREPLIFETIME(ABase_Player_Controller, turnSpeed);
 	DOREPLIFETIME(ABase_Player_Controller, inventoryList);
+	DOREPLIFETIME(ABase_Player_Controller, currentInventorySize);
 }
 

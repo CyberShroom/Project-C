@@ -8,6 +8,16 @@ FGuid UTTC_Item::getID()
 	return itemID;
 }
 
+FString UTTC_Item::GetInstance()
+{
+	return instanceID;
+}
+
+UTexture2D* UTTC_Item::GetSprite()
+{
+	return sprite;
+}
+
 void UTTC_Item::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);

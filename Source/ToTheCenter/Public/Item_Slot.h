@@ -19,18 +19,18 @@ class TOTHECENTER_API UItem_Slot : public UUserWidget
 	
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "SDIO_Items", meta = (Tooltip = "The item contained within this slot."))
-	UTTC_Item* containedItem;
+	UTTC_Item* containedItem = nullptr;
 
 public:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Defines what kind of items can be stored in this slot."))
 	ESlotType type = ESlotType::Universal;
 
 	UFUNCTION(BlueprintCallable, Category = "SDIO_UI", meta = (Tooltip = "Sets the sprite of an image object. Intended to be used with child classes of Item_Slot."))
-	void SetSprite(UImage* imageObject, UTexture2D* spriteObject);
+	void SetSprite(UImage* imageObject);
 
 	UFUNCTION()
-	bool GetContainedItem(UTTC_Item*& existingItem);
+	UTTC_Item* GetContainedItem();
 
 	UFUNCTION()
-	void SetContainedItem(UTTC_Item* newItem);
+	void SetContainedItem(UTTC_Item* newItem, UImage* imageObject);
 };

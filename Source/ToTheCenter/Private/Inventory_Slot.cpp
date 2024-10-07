@@ -13,6 +13,11 @@ void UInventory_Slot::ButtonClicked()
 	OnButtonClicked.Broadcast(this);
 }
 
+UImage* UInventory_Slot::GetSprite()
+{
+	return Sprite;
+}
+
 void UInventory_Slot::NativeConstruct()
 {
 	Super::NativeConstruct();

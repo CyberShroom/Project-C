@@ -9,22 +9,30 @@
 /**
  * 
  */
-UCLASS()
+UCLASS(Blueprintable)
 class TOTHECENTER_API UTTC_Item : public UObject
 {
 	GENERATED_BODY()
 
 protected:
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Internal Information")
 	FText name;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information")
-	UTexture2D* sprite;
-	UPROPERTY(Replicated, VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information")
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Internal Information")
+	UTexture2D* sprite = nullptr;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Internal Information")
 	FGuid itemID;
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Internal Information")
+	FString instanceID;
 
 public:
 	UFUNCTION(BlueprintPure, Category = "SDIO_Item", meta = (Tooltip = "Returns the Guid of this item."))
 	FGuid getID();
+
+	UFUNCTION(BlueprintPure, Category = "SDIO_Item", meta = (Tooltip = "Returns the Instance ID of this item. Used to identify the exact item."))
+	FString GetInstance();
+
+	UFUNCTION(BlueprintPure, Category = "SDIO_Item", meta = (Tooltip = "Returns the sprite of this item."))
+	UTexture2D* GetSprite();
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 };
