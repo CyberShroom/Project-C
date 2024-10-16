@@ -29,11 +29,11 @@ void USDIO_UIWindow_Inventory::SwapInventoryItems(UInventory_Slot* clickedSlot, 
 	mouseItem = slotItem;
 }
 
-void USDIO_UIWindow_Inventory::SetInventorySize(uint8 size)
+void USDIO_UIWindow_Inventory::SetInventorySize()
 {
 	uint8 currentRows = 0;
 
-	while (inventorySlotList.Num() < owningController->GetMaxInventorySize() && inventorySlotList.Num() < size)
+	while (inventorySlotList.Num() < maxInventorySize && inventorySlotList.Num() < currentInventorySize)
 	{
 		UInventory_Slot* newSlot = CreateWidget<UInventory_Slot>(GetWorld(), subWidget);
 
@@ -61,9 +61,9 @@ void USDIO_UIWindow_Inventory::SetInventorySize(uint8 size)
 	}
 }
 
-void USDIO_UIWindow_Inventory::SetHotbarSize(uint8 size)
+void USDIO_UIWindow_Inventory::SetHotbarSize()
 {
-	while (hotbarSlotList.Num() / 2 < 4 && hotbarSlotList.Num() / 2 < size)
+	while (hotbarSlotList.Num() / 2 < maxHotbarSize && hotbarSlotList.Num() / 2 < currentHotbarSize)
 	{
 		UInventory_Slot* newSlot1 = CreateWidget<UInventory_Slot>(GetWorld(), subWidget);
 		UInventory_Slot* newSlot2 = CreateWidget<UInventory_Slot>(GetWorld(), subWidget);
@@ -92,17 +92,52 @@ void USDIO_UIWindow_Inventory::SetHotbarSize(uint8 size)
 
 void USDIO_UIWindow_Inventory::AddItemToUIInventory(UTTC_Item* newItem)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Detected Call from server."));
 	for (UInventory_Slot* itemSlot : inventorySlotList)
 	{
 		if (itemSlot->GetContainedItem())
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Contains an item."));
 			continue;
 		}
 		else
 		{
+			UE_LOG(LogTemp, Warning, TEXT("NO ITEM. Setting contained item."));
 			itemSlot->SetContainedItem(newItem, itemSlot->GetSprite());
 			break;
 		}
+	}
+}
+
+void USDIO_UIWindow_Inventory::SetController()
+{
+	ABase_Player_Controller* controller = GetOwningPlayer<ABase_Player_Controller>();
+
+	if (IsValid(controller))
+	{
+		owningController = controller;
+		owningController->OnPickupItem.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::AddItemToUIInventory);
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &USDIO_UIWindow_Inventory::SetController);
+	}
+}
+
+void USDIO_UIWindow_Inventory::SetInventoryPanel()
+{
+	UCanvasPanelSlot* panel = Cast<UCanvasPanelSlot>(Inventory->Slot);
+
+	if (IsValid(panel))
+	{
+		inventoryPanelSlotReference = panel;
+		slotMargin = inventoryPanelSlotReference->GetOffsets();
+		SetInventorySize();
+		SetHotbarSize();
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &USDIO_UIWindow_Inventory::SetInventoryPanel);
 	}
 }
 
@@ -112,26 +147,6 @@ void USDIO_UIWindow_Inventory::NativeConstruct()
 
 	UIID = EUIID::InventoryUI;
 
-	inventoryPanelSlotReference = Cast<UCanvasPanelSlot>(Inventory->Slot);
-	if (inventoryPanelSlotReference)
-	{
-		slotMargin = inventoryPanelSlotReference->GetOffsets();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("SDIO_UIWindow_Inventory failed to cast Uniform Grid Slot to Canvas Panel. Is the grid a child of the canvas panel? Is there a canvas panel?"))
-	}
-
-	if (ABase_Player_Controller* castResult = Cast<ABase_Player_Controller>(GetOwningLocalPlayer()->GetPlayerController(GetWorld())))
-	{
-		owningController = castResult;
-		owningController->OnPickupItem.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::AddItemToUIInventory);
-
-		SetInventorySize(owningController->currentInventorySize);
-		SetHotbarSize(2);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("SDIO_UIWindow_Inventory could not find the owning player controller."))
-	}
+	SetController();
+	SetInventoryPanel();
 }

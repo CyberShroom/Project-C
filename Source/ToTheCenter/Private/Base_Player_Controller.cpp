@@ -23,20 +23,14 @@ void ABase_Player_Controller::Initialize()
 
 void ABase_Player_Controller::AddItemToInventory(UTTC_Item* newItem)
 {
+	UE_LOG(LogTemp, Warning, TEXT("Attempting to add item."));
 	if (HasAuthority())
 	{
 		if (inventoryList.Num() < maxInventorySize && inventoryList.Num() < currentInventorySize)
 		{
+			UE_LOG(LogTemp, Warning, TEXT("Item added. Attempting CAll!"));
 			inventoryList.Add(newItem);
-		}
-
-		if (IsLocalPlayerController())
-		{
 			OnPickupItem.Broadcast(newItem);
-		}
-		else
-		{
-			//Call clientRPC
 		}
 	}
 }

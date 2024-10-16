@@ -6,12 +6,13 @@
 #include "GameFramework/PlayerController.h"
 #include "Ship.h"
 #include "Net/UnrealNetwork.h"
+#include "UI_Window.h"
 #include "Base_Player_Controller.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPickupItem, UTTC_Item*, pickedItem);
-/**
- * 
- */
+
+class USDIO_UIWindow_Inventory; //Forward declaration
+
 UCLASS()
 class TOTHECENTER_API ABase_Player_Controller : public APlayerController
 {
@@ -20,6 +21,9 @@ class TOTHECENTER_API ABase_Player_Controller : public APlayerController
 private:
 	UPROPERTY()
 	uint8 maxInventorySize = 24;
+
+	UPROPERTY()
+	USDIO_UIWindow_Inventory* inventoryUIReference; //Forward declaration plz ignore
 
 protected:
 	/// <summary>Initializes the player controller.</summary>
@@ -38,6 +42,9 @@ protected:
 	//void ClientRPC_AddItemToClientInventory(UTTC_Item* newItem);
 
 public:
+	UPROPERTY(BlueprintAssignable)
+	FPickupItem OnPickupItem;
+
 	/// <summary>The ships move speed</summary>
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships move speed."))
 	float moveSpeed = 100.0;
@@ -54,9 +61,6 @@ public:
 
 	UFUNCTION(BlueprintPure, Category = "SDIO_Player")
 	uint8 GetMaxInventorySize() const;
-
-	UPROPERTY(BlueprintAssignable, Category = "SDIO | Event Dispatchers", meta = (Tooltip = "An event that is called when a player picks up an item."))
-	FPickupItem OnPickupItem;
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 };
