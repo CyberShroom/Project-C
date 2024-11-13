@@ -13,7 +13,7 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCheckForSwap, UButton_Item_Slot*, slot);
 
-UCLASS(meta = (ShortToolTip = "UI Inventory object. Contains the ui inventory and all logic associated with it."))
+UCLASS(meta = (ShortToolTip = "UI Inventory for the player."))
 class TTC_INVENTORY_API UPlayer_Inventory : public UUIInventory
 {
 	GENERATED_BODY()
@@ -25,6 +25,9 @@ private:
 	UPROPERTY()
 	uint8 slotsPerRow = 4;
 
+	/// <summary>
+	/// Handles logic related to clicking a button in the inventory.
+	/// </summary>
 	UFUNCTION()
 	void OnClickHandler(UButton_Item_Slot* clickedSlot);
 
@@ -36,7 +39,7 @@ protected:
 
 public:
 	/// <summary>
-	/// Event Signature. Meant to be called when the button is clicked.
+	/// Event Signature. Called when an inventory or hotbar button is clicked and no item is contained in the mouse.
 	/// </summary>
 	UPROPERTY(BlueprintAssignable, Category = "TTC_Inventory | Events", meta = (Tooltip = "An event that, when called, checks if a swap has occurred."))
 	FCheckForSwap CheckForSwapEvent;
@@ -54,9 +57,9 @@ public:
 	USDIO_Item* mouseItem = nullptr;
 
 	/// <summary>
-	/// Handles logic on how the inventory is sorted. DO NOT EXPOSE TO BP!
+	/// Handles logic on how the inventory is sorted.
 	/// </summary>
-	UFUNCTION()
+	UFUNCTION(BlueprintCallable, Category = "TTC_Inventory", meta = (Tooltip = "Handles logic on how the inventory is sorted."))
 	void HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USDIO_Item* newItem);
 };
 

@@ -30,8 +30,11 @@ private:
 	UPROPERTY()
 	uint8 currentHotbarSize = 2;
 
+	/// <summary>
+	/// Event Delegate. Checks if either the inventory or hotbar contain a mouse item. If they do, swap the item between inventories.
+	/// </summary>
 	UFUNCTION()
-	void CheckForSwap(UButton_Item_Slot* clickedSlot);
+	void DelegateCheckForSwap(UButton_Item_Slot* clickedSlot);
 
 protected:
 	/// <summary>
@@ -70,7 +73,7 @@ public:
 	/// The visual player inventory
 	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The visual player inventory."))
-	UPlayer_Inventory* playerInventory = NewObject<UPlayer_Inventory>();
+	UPlayer_Inventory* playerInventory;
 
 	/// <summary>
 	/// Sets the margins of the inventory panel.

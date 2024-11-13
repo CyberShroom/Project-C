@@ -3,8 +3,9 @@
 
 #include "UIInventory.h"
 
-void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, UInventory* inventoryRef, UWidget* panelRef)
+void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget)
 {
+	widgetRef = widget;
 	maxSize = maxInventorySize;
 	currentSize = currentInventorySize;
 	inventoryRef->OnPickupItem.AddUniqueDynamic(this, &UUIInventory::AddItemToUIInventory);
@@ -14,6 +15,7 @@ void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize
 
 void UUIInventory::AddItemToUIInventory(USDIO_Item* newItem)
 {
+	//Check for an empty slot and add the item to the first empty slot
 	for (UItem_Slot* itemSlot : slotList)
 	{
 		if (itemSlot->GetContainedItem())

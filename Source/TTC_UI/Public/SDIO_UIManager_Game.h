@@ -17,11 +17,12 @@ class TTC_UI_API USDIO_UIManager_Game : public UUI_Manager
 protected:
 	////Object References////
 	UPROPERTY(BlueprintReadWrite, Category = "Hierarchy References", meta = (BindWidget))
-	class UUI_Window* Inventory_Window;
-
-	UPROPERTY(BlueprintReadWrite, Category = "Hierarchy References", meta = (BindWidget))
 	class UUI_Window_BaseOptions* Options_Window;
 
 public:
+	////Object References////
+	UPROPERTY(BlueprintReadWrite, Category = "Hierarchy References", meta = (BindWidget))
+	class UUI_Window* Inventory_Window;
+
 	virtual void NativeConstruct() override;
 };

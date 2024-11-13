@@ -8,8 +8,35 @@
 //
 //}
 
+void ABase_Player_Controller::InitializeUIInventory()
+{
+	ABase_HUD* hudRef = Cast<ABase_HUD>(GetHUD());
+
+	//Check if the hud is loaded properly
+	if (IsValid(hudRef))
+	{
+		//Check if the uiManager has been set yet
+		if (IsValid(hudRef->uiManagerRef))
+		{
+			USDIO_UIWindow_Inventory* invRef = Cast<USDIO_UIWindow_Inventory>(hudRef->uiManagerRef->Inventory_Window);
+			
+			//Check if the ui is loaded properly
+			if (IsValid(invRef))
+			{
+				invRef->InitializeAttributes(playerInventory);
+				return;
+			}
+		}
+	}
+
+	//If any of these are false, Run this again next frame.
+	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABase_Player_Controller::InitializeUIInventory);
+}
+
 void ABase_Player_Controller::Initialize()
 {
+	playerInventory = NewObject<UInventory>();
+
 	if (GetPawn())
 	{
 		GetPawn()->SetActorLocation(FVector(0.0, 0.0, 0.0));
@@ -21,6 +48,7 @@ void ABase_Player_Controller::Initialize()
 	}
 
 	playerInventory->Initialize(24, 8);
+	InitializeUIInventory();
 }
 
 void ABase_Player_Controller::Security_AddItemToInventory(USDIO_Item* newItem)

@@ -13,15 +13,12 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FInventoryButtonClicked, UButton_Item_Slot*, slot);
 
-UCLASS(meta = (ShortToolTip = "An item slot used for the inventory and hotbar."))
+UCLASS(meta = (ShortToolTip = "Child of the Item_Slot with button and sprite functionality."))
 class SDIO_INVENTORY_API UButton_Item_Slot : public UItem_Slot
 {
 	GENERATED_BODY()
 
 private:
-	//UFUNCTION()
-	//void updateSprite();
-
 	/// <summary>
 	/// Broadcasts OnButtonClicked when called
 	/// </summary>

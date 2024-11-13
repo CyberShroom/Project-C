@@ -18,30 +18,26 @@ public:
 	/// <summary>
 	/// The name of the item
 	/// </summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Name of the item."))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Name of the item."))
 	FText name;
 
 	/// <summary>
 	/// The sprite of the item
 	/// </summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Sprite of the item."))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Sprite of the item."))
 	UTexture2D* sprite = nullptr;
 	
 	/// <summary>
-	/// The id of the item
+	/// The id of the item itself
 	/// </summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "ID of the item."))
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "ID of the item."))
 	FString itemID;
 
 	/// <summary>
 	/// The unique identifier of this instance of the item
 	/// </summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "Unqiue identifier of this instance of the item."))
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "Unqiue identifier of this instance of the item."))
 	FGuid instanceID;
-
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
-
-	
 };
 
 //////////////////////////////////////////////////////////

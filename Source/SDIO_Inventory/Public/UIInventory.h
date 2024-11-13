@@ -32,18 +32,18 @@ protected:
 	uint8 maxSize = 0;
 
 	/// <summary>
-	/// Reference to the child item slot
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the widget to construct"))
-	TSubclassOf<UItem_Slot> widgetRef;
-
-	/// <summary>
 	/// Called at the end of initialization. Designed to be used to fill the list.
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Fills the item_slot list until it reaches the current size. Designed to be overriden by subclasses."))
 	virtual void FillList(UWidget* parent);
 
 public:
+	/// <summary>
+	/// Reference to the child item slot
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the widget to construct"))
+	TSubclassOf<UItem_Slot> widgetRef;
+
 	/// <summary>
 	/// Current size of the inventory
 	/// </summary>
@@ -54,7 +54,7 @@ public:
 	/// UI Inventory object initializer
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers", meta = (Tooltip = "Initializes the ui inventory object. This must be ran after creating the object."))
-	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, UInventory* inventoryRef, UWidget* panelRef);
+	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget);
 
 	/// <summary>
 	/// Adds the given item to an empty slot in the inventory containers

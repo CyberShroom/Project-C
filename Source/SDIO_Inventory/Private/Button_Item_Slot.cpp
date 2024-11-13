@@ -3,11 +3,6 @@
 
 #include "Button_Item_Slot.h"
 
-//void UInventory_Slot::updateSprite()
-//{
-//	SetSprite(Sprite, );
-//}
-
 void UButton_Item_Slot::DelegateButtonClicked()
 {
 	OnButtonClicked.Broadcast(this);

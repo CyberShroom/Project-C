@@ -28,7 +28,10 @@ private:
 	TArray<USDIO_Item*> inventoryList;
 
 public:
-	UPROPERTY(BlueprintAssignable)
+	/// <summary>
+	/// Event Signature. Meant to be called when an item is attempted to be inserted into the inventory.
+	/// </summary>
+	UPROPERTY(BlueprintAssignable, Category = "SDIO_Inventory | Events", meta = (Tooltip = "Event Signature. Meant to be called when an item is attempted to be inserted into the inventory."))
 	FPickupItem OnPickupItem;
 
 	/// <summary>

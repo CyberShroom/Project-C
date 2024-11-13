@@ -5,13 +5,16 @@
 
 void UPlayer_Inventory::OnClickHandler(UButton_Item_Slot* clickedSlot)
 {
+	//Check if the inventory contains an item for the mouse
 	if (mouseItem)
 	{
+		//If true, proceed as normal
 		HandleInventoryManagement(clickedSlot, nullptr);
 		return;
 	}
 	else
 	{
+		//If false, check if hotbar has an item for the mouse and continue there.
 		CheckForSwapEvent.Broadcast(clickedSlot);
 	}
 }
@@ -22,17 +25,20 @@ void UPlayer_Inventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot
 	{
 		if (clickedSlot->GetContainedItem()) //True if there is a contained item
 		{
+			//True + True; swap the items.
 			clickedSlot->SetContainedItem(mouseItem);
 			mouseItem = clickedSlot->GetContainedItem();
 		}
 		else
 		{
+			//True + False; Place the mouse item into the container and remove the mouse item.
 			clickedSlot->SetContainedItem(mouseItem);
 			mouseItem = nullptr;
 		}
 	}
 	else
 	{
+		//False + Assumed True; Place the item in the mouse and remove the item from the container
 		mouseItem = clickedSlot->GetContainedItem();
 		clickedSlot->SetContainedItem(nullptr);
 	}
@@ -40,6 +46,7 @@ void UPlayer_Inventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot
 
 void UPlayer_Inventory::FillList(UWidget* parent)
 {
+	//Get the uniform grid. This cast shouldn't produce errors due to BeginPlay.
 	UUniformGridPanel* panel = Cast<UUniformGridPanel>(parent);
 	if (!IsValid(panel))
 	{
@@ -51,7 +58,7 @@ void UPlayer_Inventory::FillList(UWidget* parent)
 	while (slotList.Num() < maxSize && slotList.Num() < currentSize)
 	{
 		//Create an item slot
-		UButton_Item_Slot* newSlot = CreateWidget<UButton_Item_Slot>(GetWorld(), widgetRef);
+		UButton_Item_Slot* newSlot = CreateWidget<UButton_Item_Slot>(parent, widgetRef);
 
 		//Check if the slot was created successfully
 		if (newSlot)

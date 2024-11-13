@@ -3,8 +3,9 @@
 
 #include "SDIO_UIWindow_Inventory.h"
 
-void USDIO_UIWindow_Inventory::CheckForSwap(UButton_Item_Slot* clickedSlot)
+void USDIO_UIWindow_Inventory::DelegateCheckForSwap(UButton_Item_Slot* clickedSlot)
 {
+	//If the inventory cotains a mouse Item
 	if (playerInventory->mouseItem)
 	{
 		//SWAP HAS OCCURED
@@ -12,6 +13,7 @@ void USDIO_UIWindow_Inventory::CheckForSwap(UButton_Item_Slot* clickedSlot)
 	}
 	else
 	{
+		//Inventory does not contain a mouse Item
 		playerInventory->HandleInventoryManagement(clickedSlot, nullptr);
 	}
 }
@@ -56,21 +58,29 @@ void USDIO_UIWindow_Inventory::SetHotbarSize()
 
 void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef)
 {
+	//Attempt tp cast the Inventory panel
 	UCanvasPanelSlot* panel = Cast<UCanvasPanelSlot>(Inventory->Slot);
 
+	//Check if it succeeded
 	if (IsValid(panel))
 	{
+		//On Success
+
+		//Set the panelslot reference and the slotMargin reference
 		inventoryPanelSlotReference = panel;
 		slotMargin = inventoryPanelSlotReference->GetOffsets();
 
-		playerInventory->Initialize(24, 8, invRef, Inventory);
-		playerInventory->CheckForSwapEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::CheckForSwap);
+		//Initialize the player inventory
+		playerInventory->Initialize(24, 8, invRef, Inventory, subWidget);
+		playerInventory->CheckForSwapEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateCheckForSwap);
 
+		//Set the inventory panel size (Initialize contains the code for filling the inventory so this should run afterwards)
 		SetInventoryPanelSize();
 		SetHotbarSize();
 	}
 	else
 	{
+		//If not, try again next frame
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, invRef]() {InitializeAttributes(invRef); });
 	}
 }
@@ -78,4 +88,6 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef)
 void USDIO_UIWindow_Inventory::NativeConstruct()
 {
 	Super::NativeConstruct();
+
+	playerInventory = NewObject<UPlayer_Inventory>();
 }
