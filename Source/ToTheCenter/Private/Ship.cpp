@@ -42,7 +42,7 @@ void AShip::Tick(float DeltaTime)
 }
 
 // Called to bind functionality to input
-void AShip::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
+void AShip::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
 }

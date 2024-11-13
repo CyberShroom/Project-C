@@ -13,7 +13,52 @@
 				"Engine",
 				"CoreUObject"
 			]
+		},
+		{
+			"Name": "SDIO_UI",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"UMG",
+				"Engine",
+				"CoreUObject"
+			]
+		},
+		{
+			"Name": "SDIO_Inventory",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"UMG",
+				"Engine",
+				"CoreUObject"
+			]
+		},
+		{
+			"Name": "TTC_Inventory",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"UMG",
+				"Engine",
+				"CoreUObject",
+				"SDIO_Inventory"
+			]
+		},
+		{
+			"Name": "TTC_UI",
+			"Type": "Runtime",
+			"LoadingPhase": "Default",
+			"AdditionalDependencies": [
+				"UMG",
+				"Engine",
+				"CoreUObject",
+				"SDIO_UI",
+				"SDIO_Inventory",
+				"TTC_Inventory"
+			]
 		}
+
 	],
 	"Plugins": [
 		{

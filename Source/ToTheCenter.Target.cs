@@ -10,6 +10,6 @@ public class ToTheCenterTarget : TargetRules
 		Type = TargetType.Game;
 		DefaultBuildSettings = BuildSettingsVersion.V4;
 
-		ExtraModuleNames.AddRange( new string[] { "ToTheCenter" } );
+		ExtraModuleNames.AddRange( new string[] { "ToTheCenter","SDIO_UI","SDIO_Inventory","TTC_UI","TTC_Inventory" } );
 	}
 }

@@ -19,25 +19,16 @@ void ABase_Player_Controller::Initialize()
 	{
 		UE_LOG(LogTemp, Error, TEXT("Failed to find a UShip that belongs to this player controller."));
 	}
+
+	playerInventory->Initialize(24, 8);
 }
 
-void ABase_Player_Controller::AddItemToInventory(UTTC_Item* newItem)
+void ABase_Player_Controller::Security_AddItemToInventory(USDIO_Item* newItem)
 {
-	UE_LOG(LogTemp, Warning, TEXT("Attempting to add item."));
 	if (HasAuthority())
 	{
-		if (inventoryList.Num() < maxInventorySize && inventoryList.Num() < currentInventorySize)
-		{
-			UE_LOG(LogTemp, Warning, TEXT("Item added. Attempting CAll!"));
-			inventoryList.Add(newItem);
-			OnPickupItem.Broadcast(newItem);
-		}
+		playerInventory->AddItemToInventory(newItem);
 	}
-}
-
-uint8 ABase_Player_Controller::GetMaxInventorySize() const
-{
-	return maxInventorySize;
 }
 
 void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -46,7 +37,5 @@ void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimePropert
 
 	DOREPLIFETIME(ABase_Player_Controller, moveSpeed);
 	DOREPLIFETIME(ABase_Player_Controller, turnSpeed);
-	DOREPLIFETIME(ABase_Player_Controller, inventoryList);
-	DOREPLIFETIME(ABase_Player_Controller, currentInventorySize);
 }
 
