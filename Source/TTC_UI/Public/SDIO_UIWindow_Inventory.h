@@ -10,6 +10,7 @@
 #include "Kismet/GameplayStatics.h"
 #include "TimerManager.h"
 #include "Player_Inventory.h"
+#include "Player_Hotbar.h"
 #include "SDIO_UIWindow_Inventory.generated.h"
 
 UCLASS(meta = (ShortToolTip = "The Inventory window base class"))
@@ -76,22 +77,22 @@ public:
 	UPlayer_Inventory* playerInventory;
 
 	/// <summary>
+	/// The visual player hotbar
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The visual player hotbar."))
+	UPlayer_Hotbar* hotbarInventory;
+
+	/// <summary>
 	/// Sets the margins of the inventory panel.
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Sets the margins of the inventory panel."))
 	void SetInventoryPanelSize();
 
 	/// <summary>
-	/// Create inventory slots to match the current hotbar size.
-	/// </summary>
-	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Creates inventory slots to match the current hotbar size."))
-	void SetHotbarSize();
-
-	/// <summary>
 	/// Initializes the inventory panel and inventory. Meant to be called from the invRef location.
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Initializes the inventory panel and inventory. Meant to be called from the invRef location."))
-	void InitializeAttributes(UInventory* invRef);
+	void InitializeAttributes(UInventory* invRef, UInventory* hotbarRef);
 
 	virtual void NativeConstruct() override;
 };

@@ -19,11 +19,12 @@ void ABase_Player_Controller::InitializeUIInventory()
 		if (IsValid(hudRef->uiManagerRef))
 		{
 			USDIO_UIWindow_Inventory* invRef = Cast<USDIO_UIWindow_Inventory>(hudRef->uiManagerRef->Inventory_Window);
+			AShip* shipRef = Cast<AShip>(GetPawn());
 			
 			//Check if the ui is loaded properly
-			if (IsValid(invRef))
+			if (IsValid(invRef) && IsValid(shipRef))
 			{
-				invRef->InitializeAttributes(playerInventory);
+				invRef->InitializeAttributes(playerInventory, shipRef->shipInventory);
 				return;
 			}
 		}

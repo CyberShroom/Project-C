@@ -38,6 +38,12 @@ public:
 	/// </summary>
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "Unqiue identifier of this instance of the item."))
 	FGuid instanceID;
+
+	/// <summary>
+	///
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers")
+	void Initialize();
 };
 
 //////////////////////////////////////////////////////////

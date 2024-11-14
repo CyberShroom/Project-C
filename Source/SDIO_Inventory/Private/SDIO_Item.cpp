@@ -3,4 +3,7 @@
 
 #include "SDIO_Item.h"
 
-
+void USDIO_Item::Initialize()
+{
+	instanceID.NewGuid();
+}

@@ -21,6 +21,8 @@ void AShip::BeginPlay()
 {
 	Super::BeginPlay();
 	
+	shipInventory = NewObject<UInventory>();
+	shipInventory->Initialize(8,currentHotbarSize);
 }
 
 void AShip::MoveShip(float joystickValue)
@@ -32,6 +34,14 @@ void AShip::TurnShip(float joystickValue)
 {
 	AddActorLocalRotation(FRotator(0.0, turnSpeed * joystickValue, 0.0));
 	camera->AddRelativeRotation(FRotator(0.0, turnSpeed * joystickValue * -1, 0.0));
+}
+
+void AShip::Security_AddItemToInventory(USDIO_Item* newItem)
+{
+	if (HasAuthority())
+	{
+		shipInventory->AddItemToInventory(newItem);
+	}
 }
 
 // Called every frame

@@ -21,6 +21,8 @@ void UPlayer_Inventory::OnClickHandler(UButton_Item_Slot* clickedSlot)
 
 void UPlayer_Inventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USDIO_Item* newItem)
 {
+	if (!slotList.Contains(clickedSlot)) return;
+
 	if (mouseItem) //True if mouse contains an item
 	{
 		if (clickedSlot->GetContainedItem()) //True if there is a contained item
@@ -35,6 +37,11 @@ void UPlayer_Inventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot
 			clickedSlot->SetContainedItem(mouseItem);
 			mouseItem = nullptr;
 		}
+	}
+	else if (newItem) //True only if a swap has occurred
+	{
+		mouseItem = clickedSlot->GetContainedItem();
+		clickedSlot->SetContainedItem(newItem);
 	}
 	else
 	{
