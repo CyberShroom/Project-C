@@ -51,6 +51,18 @@ public:
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Adds the given item to the inventory object."))
 	void AddItemToInventory(USDIO_Item* newItem);
+
+	/// <summary>
+	/// Returns an item with the given GUID or nullptr if it doesn't exist
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Returns an item with the given GUID. Returns nullptr if it wasn't found."))
+	USDIO_Item* GetItemFromInventory(FGuid itemID);
+
+	/// <summary>
+	/// Removes the given item from the inventory
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Removes the given item from the inventory."))
+	void RemoveItemFromInventory(FGuid itemID);
 };
 
 //////////////////////////////////////////////////////////

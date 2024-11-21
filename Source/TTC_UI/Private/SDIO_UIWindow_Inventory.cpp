@@ -10,12 +10,14 @@ void USDIO_UIWindow_Inventory::DelegateCheckForSwap(UButton_Item_Slot* clickedSl
 	{
 		//SWAP HAS OCCURED
 		hotbarInventory->HandleInventoryManagement(clickedSlot, playerInventory->mouseItem);
+		onMoveItemToHotbar.Broadcast(playerInventory->mouseItem->instanceID);
 		playerInventory->mouseItem = nullptr;
 	}
 	else if(hotbarInventory->mouseItem)
 	{
 		//SWAP HAS OCCURED
 		playerInventory->HandleInventoryManagement(clickedSlot, hotbarInventory->mouseItem);
+		onMoveItemFromHotbar.Broadcast(hotbarInventory->mouseItem->instanceID);
 		hotbarInventory->mouseItem = nullptr;
 	}
 	else

@@ -13,6 +13,9 @@
 #include "Player_Hotbar.h"
 #include "SDIO_UIWindow_Inventory.generated.h"
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMoveItemToHotbar, FGuid, itemID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMoveItemFromHotbar, FGuid, itemID);
+
 UCLASS(meta = (ShortToolTip = "The Inventory window base class"))
 class TTC_UI_API USDIO_UIWindow_Inventory : public UUI_Window
 {
@@ -70,6 +73,12 @@ protected:
 	FMargin slotMargin;
 
 public:
+	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item from the inventory to the hotbar."))
+	FMoveItemToHotbar onMoveItemToHotbar;
+
+	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item from the hotbar to the inventory."))
+	FMoveItemToHotbar onMoveItemFromHotbar;
+
 	/// <summary>
 	/// The visual player inventory
 	/// </summary>

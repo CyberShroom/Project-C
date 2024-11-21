@@ -10,6 +10,7 @@
 #include "Inventory.h"
 #include "Base_HUD.h"
 #include "SDIO_UIWindow_Inventory.h"
+#include "TTC_Item.h"
 #include "Base_Player_Controller.generated.h"
 
 class USDIO_UIWindow_Inventory; //Forward declaration
@@ -38,9 +39,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Reference to the player pawn."))
 	AShip* playerShip;
 
-	//UFUNCTION(Client, Reliable, BlueprintCallable, Category = "SDIO_Player | Client RPC", meta = (Tooltip = "Tells the client to add an item to its inventory."))
-	//void ClientRPC_AddItemToClientInventory(UTTC_Item* newItem);
-
 public:
 	/// <summary>
 	/// The players logical inventory
@@ -56,8 +54,32 @@ public:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
 	float turnSpeed = 100.0;
 
+	/// <summary>
+	/// Adds an item to the players inventory. Can only be called from the server.
+	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC", meta = (Tooltip = "Adds an item to the players inventory."))
 	void Security_AddItemToInventory(USDIO_Item* newItem);
+
+	/// <summary>
+	/// Tells the client to create an item of the given name with the given id.
+	/// </summary>
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "TTC | ClientRPC", meta = (Tooltip = "Tells the client to create an item of the given name with the given id."))
+	void ClientRPC_AddItemToInventory(FGuid itemID);
+
+	/// <summary>
+	/// Tells the server to move an item to the hotbar
+	/// </summary>
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Tells the server to move an item from the inventory to the hotbar."))
+	void ServerRPC_MoveItemToHotbar(FGuid itemID);
+
+	/// <summary>
+	/// Tells the server to move an item to the inventory from the hotbar
+	/// </summary>
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Tells the server to move an item from the hotbar to the inventory."))
+	void ServerRPC_MoveItemFromHotbar(FGuid itemID);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TSubclassOf<UTTC_Item> itemRef;
 
 	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 };

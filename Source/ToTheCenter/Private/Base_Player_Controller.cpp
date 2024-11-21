@@ -3,10 +3,6 @@
 
 #include "Base_Player_Controller.h"
 
-//void ABase_Player_Controller::ClientRPC_AddItemToClientInventory(UTTC_Item* newItem)
-//{
-//
-//}
 
 void ABase_Player_Controller::InitializeUIInventory()
 {
@@ -25,6 +21,8 @@ void ABase_Player_Controller::InitializeUIInventory()
 			if (IsValid(invRef) && IsValid(shipRef))
 			{
 				invRef->InitializeAttributes(playerInventory, shipRef->shipInventory);
+				invRef->onMoveItemToHotbar.AddUniqueDynamic(this, &ABase_Player_Controller::ServerRPC_MoveItemToHotbar);
+				invRef->onMoveItemFromHotbar.AddUniqueDynamic(this, &ABase_Player_Controller::ServerRPC_MoveItemFromHotbar);
 				return;
 			}
 		}
@@ -54,10 +52,47 @@ void ABase_Player_Controller::Initialize()
 
 void ABase_Player_Controller::Security_AddItemToInventory(USDIO_Item* newItem)
 {
+	//Only Server may run this
 	if (HasAuthority())
 	{
-		playerInventory->AddItemToInventory(newItem);
+		//Do not add the item if its the host. This will result in duplicates
+		if (!IsLocalPlayerController())
+		{
+			playerInventory->AddItemToInventory(newItem);
+		}
+		ClientRPC_AddItemToInventory(newItem->instanceID);
 	}
+}
+
+void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID)
+{
+	UTTC_Item* newItem = NewObject<UTTC_Item>(GetWorld(),itemRef);
+	newItem->instanceID = itemID;
+	playerInventory->AddItemToInventory(newItem);
+}
+
+void ABase_Player_Controller::ServerRPC_MoveItemToHotbar_Implementation(FGuid itemID)
+{
+	if (playerInventory->GetItemFromInventory(itemID) == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("An item with the GUID %s could not be found."), *itemID.ToString());
+		return;
+	}
+
+	playerShip->shipInventory->AddItemToInventory(playerInventory->GetItemFromInventory(itemID));
+	playerInventory->RemoveItemFromInventory(itemID);
+}
+
+void ABase_Player_Controller::ServerRPC_MoveItemFromHotbar_Implementation(FGuid itemID)
+{
+	if (playerShip->shipInventory->GetItemFromInventory(itemID) == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("An item with the GUID %s could not be found."), *itemID.ToString());
+		return;
+	}
+
+	playerInventory->AddItemToInventory(playerShip->shipInventory->GetItemFromInventory(itemID));
+	playerShip->shipInventory->RemoveItemFromInventory(itemID);
 }
 
 void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
