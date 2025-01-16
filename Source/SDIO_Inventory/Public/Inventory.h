@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "Net/UnrealNetwork.h"
 #include "SDIO_Item.h"
+#include "SDIO_Inventory_Enums.h"
 #include "Inventory.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FPickupItem, USDIO_Item*, pickedItem);
@@ -27,6 +28,12 @@ private:
 	UPROPERTY()
 	TArray<USDIO_Item*> inventoryList;
 
+	/// <summary>
+	/// The ID of the inventory
+	/// </summary>
+	UPROPERTY()
+	EInventoryID inventoryID = EInventoryID::NOID;
+
 public:
 	/// <summary>
 	/// Event Signature. Meant to be called when an item is attempted to be inserted into the inventory.
@@ -44,13 +51,13 @@ public:
 	/// Inventory object initializer
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers", meta = (Tooltip = "Initializes the inventory object. This must be ran after creating the object."))
-	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize);
+	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, EInventoryID id);
 
 	/// <summary>
 	/// Adds the given item to the inventory
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Adds the given item to the inventory object."))
-	void AddItemToInventory(USDIO_Item* newItem);
+	void AddItemToInventory(USDIO_Item* newItem, bool bIsNew);
 
 	/// <summary>
 	/// Returns an item with the given GUID or nullptr if it doesn't exist
@@ -63,6 +70,12 @@ public:
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Removes the given item from the inventory."))
 	void RemoveItemFromInventory(FGuid itemID);
+
+	/// <summary>
+	/// Returns the inventory ID
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Returns the ID of this inventory object"))
+	EInventoryID GetInventoryID();
 };
 
 //////////////////////////////////////////////////////////

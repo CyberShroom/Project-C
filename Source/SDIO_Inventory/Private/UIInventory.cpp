@@ -3,11 +3,12 @@
 
 #include "UIInventory.h"
 
-void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget)
+void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget, EInventoryID id)
 {
 	widgetRef = widget;
 	maxSize = maxInventorySize;
 	currentSize = currentInventorySize;
+	inventoryID = id;
 	inventoryRef->OnPickupItem.AddUniqueDynamic(this, &UUIInventory::AddItemToUIInventory);
 
 	FillList(panelRef);
@@ -28,6 +29,11 @@ void UUIInventory::AddItemToUIInventory(USDIO_Item* newItem)
 			break;
 		}
 	}
+}
+
+EInventoryID UUIInventory::GetInventoryID()
+{
+	return inventoryID;
 }
 
 void UUIInventory::FillList(UWidget* parent)

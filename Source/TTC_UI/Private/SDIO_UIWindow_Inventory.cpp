@@ -3,27 +3,92 @@
 
 #include "SDIO_UIWindow_Inventory.h"
 
-void USDIO_UIWindow_Inventory::DelegateCheckForSwap(UButton_Item_Slot* clickedSlot)
+void USDIO_UIWindow_Inventory::DelegateInventoryInteraction(UButton_Item_Slot* clickedSlot, EInventoryID id)
 {
-	//If the inventory cotains a mouse Item
-	if (playerInventory->mouseItem)
+	// Flag that determines if id should be the next last inventory interaction at end of function
+	bool bUpdateInteraction = false;
+
+	//If clickSlot contains an item, thats an interaction. Set flag to true.
+	if (clickedSlot->GetContainedItem())
 	{
-		//SWAP HAS OCCURED
-		hotbarInventory->HandleInventoryManagement(clickedSlot, playerInventory->mouseItem);
-		onMoveItemToHotbar.Broadcast(playerInventory->mouseItem->instanceID);
-		playerInventory->mouseItem = nullptr;
+		bUpdateInteraction = true;
 	}
-	else if(hotbarInventory->mouseItem)
+
+	//Do different things based on the last interacted inventory. Remember that clicking an empty slot does not count as an interaction.
+	switch (lastInteractedInventory)
 	{
-		//SWAP HAS OCCURED
-		playerInventory->HandleInventoryManagement(clickedSlot, hotbarInventory->mouseItem);
-		onMoveItemFromHotbar.Broadcast(hotbarInventory->mouseItem->instanceID);
-		hotbarInventory->mouseItem = nullptr;
+		case EInventoryID::NOID: //No interacted inventory, handle from inventory.
+			ReturnInventoryInteraction(clickedSlot, nullptr, id);
+			break;
+		case EInventoryID::Main_Inventory:
+			//If ids are the same, no swap occurs
+			if (lastInteractedInventory == id)
+			{
+				ReturnInventoryInteraction(clickedSlot, nullptr, id);
+			}
+			else //Since lastinteractedinventory only updates on clicking a slot with an item in it, a swap has to occur.
+			{
+				ReturnInventoryInteraction(clickedSlot, playerInventory->mouseItem, id);
+				onMoveItemBetweenInventories.Broadcast(playerInventory->mouseItem->instanceID, id, lastInteractedInventory);
+				playerInventory->mouseItem = nullptr;
+			}
+			break;
+		case EInventoryID::Hotbar_Inventory:
+			//If ids are the same, no swap occurs
+			if (lastInteractedInventory == id)
+			{
+				ReturnInventoryInteraction(clickedSlot, nullptr, id);
+			}
+			else //Since lastinteractedinventory only updates on clicking a slot with an item in it, a swap has to occur.
+			{
+				ReturnInventoryInteraction(clickedSlot, hotbarInventory->mouseItem, id);
+				onMoveItemBetweenInventories.Broadcast(hotbarInventory->mouseItem->instanceID, id, lastInteractedInventory);
+				hotbarInventory->mouseItem = nullptr;
+			}
+			break;
+		case EInventoryID::Equipment_Inventory:
+			//If id is equal
+				//HandleInventory
+			//Else
+				//Swap has occurred
+			break;
+		case EInventoryID::Passive_Inventory:
+			//ignore for now
+			break;
+		default:
+			UE_LOG(LogTemp, Error, TEXT("Inventory Interaction Event From UIWindow_Inventory failed to recieve a correct ID."));
+			break;
 	}
-	else
+
+	//If flag is true, update last interaction
+	if (bUpdateInteraction)
 	{
-		playerInventory->HandleInventoryManagement(clickedSlot, nullptr);
-		hotbarInventory->HandleInventoryManagement(clickedSlot, nullptr);
+		lastInteractedInventory = id;
+	}
+	else //Otherwise clear last interaction
+	{
+		lastInteractedInventory = EInventoryID::NOID;
+	}
+}
+
+void USDIO_UIWindow_Inventory::ReturnInventoryInteraction(UButton_Item_Slot* clickedSlot, USDIO_Item* swapItem, EInventoryID id)
+{
+	//Runs the inventory handler for the given id and only the given id
+	switch (id)
+	{
+		case EInventoryID::Main_Inventory:
+			playerInventory->HandleInventoryManagement(clickedSlot, swapItem);
+			break;
+		case EInventoryID::Hotbar_Inventory:
+			hotbarInventory->HandleInventoryManagement(clickedSlot, swapItem);
+			break;
+		case EInventoryID::Equipment_Inventory:
+			break;
+		case EInventoryID::Passive_Inventory:
+			break;
+		default:
+			UE_LOG(LogTemp, Error, TEXT("Return Inventory Interaction Event From UIWindow_Inventory failed to recieve a correct ID."));
+			break;
 	}
 }
 
@@ -51,12 +116,12 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 		slotMargin = inventoryPanelSlotReference->GetOffsets();
 
 		//Initialize the player inventory
-		playerInventory->Initialize(24, 8, invRef, Inventory, subWidget);
-		playerInventory->CheckForSwapEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateCheckForSwap);
+		playerInventory->Initialize(24, 8, invRef, Inventory, subWidget, EInventoryID::Main_Inventory);
+		playerInventory->InventoryInteractionEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
 
 		//Initialize the player hotbar
-		hotbarInventory->Initialize(8, 8, hotbarRef, Hotbar, subWidget);
-		hotbarInventory->CheckForSwapEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateCheckForSwap);
+		hotbarInventory->Initialize(8, 8, hotbarRef, Hotbar, subWidget, EInventoryID::Hotbar_Inventory);
+		hotbarInventory->InventoryInteractionEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
 
 		//Set the inventory panel size (Initialize contains the code for filling the inventory so this should run afterwards)
 		SetInventoryPanelSize();

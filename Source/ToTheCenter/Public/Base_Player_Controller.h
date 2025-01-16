@@ -30,6 +30,12 @@ private:
 	UFUNCTION()
 	void InitializeUIInventory();
 
+	/// <summary>
+	/// Handles the inventory interaction event
+	/// </summary>
+	UFUNCTION()
+	void DelegateInventoryInteractionHandler(FGuid itemID, EInventoryID targetID, EInventoryID originID);
+
 protected:
 	/// <summary>Initializes the player controller.</summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC | Initializers", meta = (Tooltip = "Initializes the base player controller. This must be ran in BeginPlay BP!"))
@@ -58,25 +64,19 @@ public:
 	/// Adds an item to the players inventory. Can only be called from the server.
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC", meta = (Tooltip = "Adds an item to the players inventory."))
-	void Security_AddItemToInventory(USDIO_Item* newItem);
+	void AdvancedAddItemToInventory(USDIO_Item* newItem, bool bIsPickup);
 
 	/// <summary>
 	/// Tells the client to create an item of the given name with the given id.
 	/// </summary>
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "TTC | ClientRPC", meta = (Tooltip = "Tells the client to create an item of the given name with the given id."))
-	void ClientRPC_AddItemToInventory(FGuid itemID);
+	void ClientRPC_AddItemToInventory(FGuid itemID, bool bIsPickup);
 
 	/// <summary>
-	/// Tells the server to move an item to the hotbar
+	/// Tells the server to move an item from the origin to the target
 	/// </summary>
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Tells the server to move an item from the inventory to the hotbar."))
-	void ServerRPC_MoveItemToHotbar(FGuid itemID);
-
-	/// <summary>
-	/// Tells the server to move an item to the inventory from the hotbar
-	/// </summary>
-	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Tells the server to move an item from the hotbar to the inventory."))
-	void ServerRPC_MoveItemFromHotbar(FGuid itemID);
+	void ServerRPC_MoveItemBetweenInventories(FGuid itemID, EInventoryID targetID, EInventoryID originID);
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UTTC_Item> itemRef;

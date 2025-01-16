@@ -5,18 +5,7 @@
 
 void UPlayer_Hotbar::OnClickHandler(UButton_Item_Slot* clickedSlot)
 {
-	//Check if the inventory contains an item for the mouse
-	if (mouseItem)
-	{
-		//If true, proceed as normal
-		HandleInventoryManagement(clickedSlot, nullptr);
-		return;
-	}
-	else
-	{
-		//If false, check if hotbar has an item for the mouse and continue there.
-		CheckForSwapEvent.Broadcast(clickedSlot);
-	}
+	InventoryInteractionEvent.Broadcast(clickedSlot, GetInventoryID());
 }
 
 void UPlayer_Hotbar::FillList(UWidget* parent)

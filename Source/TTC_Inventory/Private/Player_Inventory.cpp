@@ -5,22 +5,12 @@
 
 void UPlayer_Inventory::OnClickHandler(UButton_Item_Slot* clickedSlot)
 {
-	//Check if the inventory contains an item for the mouse
-	if (mouseItem)
-	{
-		//If true, proceed as normal
-		HandleInventoryManagement(clickedSlot, nullptr);
-		return;
-	}
-	else
-	{
-		//If false, check if hotbar has an item for the mouse and continue there.
-		CheckForSwapEvent.Broadcast(clickedSlot);
-	}
+	InventoryInteractionEvent.Broadcast(clickedSlot, GetInventoryID());
 }
 
 void UPlayer_Inventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USDIO_Item* newItem)
 {
+	//Do nothing if the container doesn't exist in this array
 	if (!slotList.Contains(clickedSlot)) return;
 
 	if (mouseItem) //True if mouse contains an item

@@ -14,7 +14,18 @@ enum class ESlotType : uint8
 	Active,
 	Weapon,
 	Projectile,
+	Equipment,
 	Other,
 
 	Universal
+};
+
+UENUM(BlueprintType, Category = "SDIO_Inventory", meta = (Tooltip = "Inventory ID."))
+enum class EInventoryID : uint8
+{
+	NOID,
+	Main_Inventory,
+	Hotbar_Inventory,
+	Equipment_Inventory,
+	Passive_Inventory
 };

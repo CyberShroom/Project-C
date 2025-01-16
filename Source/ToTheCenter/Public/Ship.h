@@ -55,7 +55,7 @@ public:
 	/// Adds an item to the ships hotbar
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC", meta = (Tooltip = "Adds an item to the ships hotbar"))
-	void Security_AddItemToInventory(USDIO_Item* newItem);
+	void AdvancedAddItemToInventory(USDIO_Item* newItem);
 
 	// Sets default values for this pawn's properties
 	AShip();

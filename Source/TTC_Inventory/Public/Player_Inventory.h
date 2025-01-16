@@ -11,7 +11,7 @@
 #include "Button_Item_Slot.h"
 #include "Player_Inventory.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCheckForSwap, UButton_Item_Slot*, slot);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryInteraction, UButton_Item_Slot*, slot, EInventoryID, id);
 
 UCLASS(meta = (ShortToolTip = "UI Inventory for the player."))
 class TTC_INVENTORY_API UPlayer_Inventory : public UUIInventory
@@ -42,7 +42,7 @@ public:
 	/// Event Signature. Called when an inventory or hotbar button is clicked and no item is contained in the mouse.
 	/// </summary>
 	UPROPERTY(BlueprintAssignable, Category = "TTC_Inventory | Events", meta = (Tooltip = "An event that, when called, checks if a swap has occurred."))
-	FCheckForSwap CheckForSwapEvent;
+	FInventoryInteraction InventoryInteractionEvent;
 
 	/// <summary>
 	/// The number of rows in the inventory

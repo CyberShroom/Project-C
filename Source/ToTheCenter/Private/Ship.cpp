@@ -22,7 +22,7 @@ void AShip::BeginPlay()
 	Super::BeginPlay();
 	
 	shipInventory = NewObject<UInventory>();
-	shipInventory->Initialize(8,currentHotbarSize);
+	shipInventory->Initialize(8,currentHotbarSize, EInventoryID::Hotbar_Inventory);
 }
 
 void AShip::MoveShip(float joystickValue)
@@ -36,11 +36,12 @@ void AShip::TurnShip(float joystickValue)
 	camera->AddRelativeRotation(FRotator(0.0, turnSpeed * joystickValue * -1, 0.0));
 }
 
-void AShip::Security_AddItemToInventory(USDIO_Item* newItem)
+//This might not be necessaru
+void AShip::AdvancedAddItemToInventory(USDIO_Item* newItem)
 {
-	if (HasAuthority())
+	if (GetController()->IsLocalPlayerController() == false)
 	{
-		shipInventory->AddItemToInventory(newItem);
+		shipInventory->AddItemToInventory(newItem, false);
 	}
 }
 

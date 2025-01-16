@@ -21,8 +21,7 @@ void ABase_Player_Controller::InitializeUIInventory()
 			if (IsValid(invRef) && IsValid(shipRef))
 			{
 				invRef->InitializeAttributes(playerInventory, shipRef->shipInventory);
-				invRef->onMoveItemToHotbar.AddUniqueDynamic(this, &ABase_Player_Controller::ServerRPC_MoveItemToHotbar);
-				invRef->onMoveItemFromHotbar.AddUniqueDynamic(this, &ABase_Player_Controller::ServerRPC_MoveItemFromHotbar);
+				invRef->onMoveItemBetweenInventories.AddUniqueDynamic(this, &ABase_Player_Controller::DelegateInventoryInteractionHandler);
 				return;
 			}
 		}
@@ -30,6 +29,73 @@ void ABase_Player_Controller::InitializeUIInventory()
 
 	//If any of these are false, Run this again next frame.
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABase_Player_Controller::InitializeUIInventory);
+}
+
+void ABase_Player_Controller::DelegateInventoryInteractionHandler(FGuid itemID, EInventoryID targetID, EInventoryID originID)
+{
+	//If either inventory IDs are invalid, do not run this.
+	if (targetID == EInventoryID::NOID)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Player Controller attempted to move items between inventories, but no valid TARGET inventory was given!"));
+		return;
+	}
+	else if (originID == EInventoryID::NOID)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Player Controller attempted to move items between inventories, but no valid ORIGIN inventory was given!"));
+		return;
+	}
+
+	//If is the host, run the server RPC instead
+	if (HasAuthority() && IsLocalPlayerController())
+	{
+		ServerRPC_MoveItemBetweenInventories(itemID, targetID, originID);
+		return;
+	}
+
+	//The item that will be moved
+	USDIO_Item* itemToMove = nullptr;
+
+	//Grab the item from the origin inventory. Remove it after its found. NOTE: RemoveItem function has built in nullptr detection, so its not needed here.
+	switch (originID)
+	{
+		case EInventoryID::Main_Inventory:
+			itemToMove = playerInventory->GetItemFromInventory(itemID);
+			playerInventory->RemoveItemFromInventory(itemID);
+			break;
+		case EInventoryID::Hotbar_Inventory:
+			itemToMove = playerShip->shipInventory->GetItemFromInventory(itemID);
+			playerShip->shipInventory->RemoveItemFromInventory(itemID);
+			break;
+		case EInventoryID::Equipment_Inventory:
+			break;
+		case EInventoryID::Passive_Inventory:
+			break;
+	}
+
+	//If no item is found, don't try to add it.
+	if (itemToMove == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Player Controller could not find An item with the GUID %s while trying to move items between inventories."), *itemID.ToString());
+		return;
+	}
+
+	//Add the item to the target inventory
+	switch (targetID)
+	{
+		case EInventoryID::Main_Inventory:
+			playerInventory->AddItemToInventory(itemToMove, false);
+			break;
+		case EInventoryID::Hotbar_Inventory:
+			playerShip->shipInventory->AddItemToInventory(itemToMove, false);
+			break;
+		case EInventoryID::Equipment_Inventory:
+			break;
+		case EInventoryID::Passive_Inventory:
+			break;
+	}
+
+	//Reflect this on the server's side
+	ServerRPC_MoveItemBetweenInventories(itemID, targetID, originID);
 }
 
 void ABase_Player_Controller::Initialize()
@@ -46,53 +112,82 @@ void ABase_Player_Controller::Initialize()
 		UE_LOG(LogTemp, Error, TEXT("Failed to find a UShip that belongs to this player controller."));
 	}
 
-	playerInventory->Initialize(24, 8);
+	playerInventory->Initialize(24, 8, EInventoryID::Main_Inventory);
 	InitializeUIInventory();
 }
 
-void ABase_Player_Controller::Security_AddItemToInventory(USDIO_Item* newItem)
+void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bool bIsPickup)
 {
-	//Only Server may run this
-	if (HasAuthority())
+	//Do not add the item if its the host. This will result in duplicates
+	playerInventory->AddItemToInventory(newItem, bIsPickup);
+	if (!IsLocalPlayerController() && bIsPickup)
 	{
-		//Do not add the item if its the host. This will result in duplicates
-		if (!IsLocalPlayerController())
-		{
-			playerInventory->AddItemToInventory(newItem);
-		}
-		ClientRPC_AddItemToInventory(newItem->instanceID);
+		ClientRPC_AddItemToInventory(newItem->instanceID, bIsPickup);
 	}
 }
 
-void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID)
+void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID, bool bIsPickup)
 {
 	UTTC_Item* newItem = NewObject<UTTC_Item>(GetWorld(),itemRef);
 	newItem->instanceID = itemID;
-	playerInventory->AddItemToInventory(newItem);
+	playerInventory->AddItemToInventory(newItem, bIsPickup);
 }
 
-void ABase_Player_Controller::ServerRPC_MoveItemToHotbar_Implementation(FGuid itemID)
+void ABase_Player_Controller::ServerRPC_MoveItemBetweenInventories_Implementation(FGuid itemID, EInventoryID targetID, EInventoryID originID)
 {
-	if (playerInventory->GetItemFromInventory(itemID) == nullptr)
+	//If either inventory IDs are invalid, do not run this.
+	if (targetID == EInventoryID::NOID)
 	{
-		UE_LOG(LogTemp, Error, TEXT("An item with the GUID %s could not be found."), *itemID.ToString());
+		UE_LOG(LogTemp, Error, TEXT("Player Controller attempted to move items between inventories, but no valid TARGET inventory was given!"));
+		return;
+	}
+	else if(originID == EInventoryID::NOID)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Player Controller attempted to move items between inventories, but no valid ORIGIN inventory was given!"));
 		return;
 	}
 
-	playerShip->shipInventory->AddItemToInventory(playerInventory->GetItemFromInventory(itemID));
-	playerInventory->RemoveItemFromInventory(itemID);
-}
+	//The item that will be moved
+	USDIO_Item* itemToMove = nullptr;
 
-void ABase_Player_Controller::ServerRPC_MoveItemFromHotbar_Implementation(FGuid itemID)
-{
-	if (playerShip->shipInventory->GetItemFromInventory(itemID) == nullptr)
+	//Grab the item from the origin inventory. Remove it after its found. NOTE: RemoveItem function has built in nullptr detection, so its not needed here.
+	switch (originID)
 	{
-		UE_LOG(LogTemp, Error, TEXT("An item with the GUID %s could not be found."), *itemID.ToString());
+		case EInventoryID::Main_Inventory:
+			itemToMove = playerInventory->GetItemFromInventory(itemID);
+			playerInventory->RemoveItemFromInventory(itemID);
+			break;
+		case EInventoryID::Hotbar_Inventory:
+			itemToMove = playerShip->shipInventory->GetItemFromInventory(itemID);
+			playerShip->shipInventory->RemoveItemFromInventory(itemID);
+			break;
+		case EInventoryID::Equipment_Inventory:
+			break;
+		case EInventoryID::Passive_Inventory:
+			break;
+	}
+
+	//If no item is found, don't try to add it.
+	if (itemToMove == nullptr)
+	{
+		UE_LOG(LogTemp, Error, TEXT("Player Controller could not find An item with the GUID %s while trying to move items between inventories."), *itemID.ToString());
 		return;
 	}
 
-	playerInventory->AddItemToInventory(playerShip->shipInventory->GetItemFromInventory(itemID));
-	playerShip->shipInventory->RemoveItemFromInventory(itemID);
+	//Add the item to the target inventory
+	switch (targetID)
+	{
+		case EInventoryID::Main_Inventory:
+			playerInventory->AddItemToInventory(itemToMove, false);
+			break;
+		case EInventoryID::Hotbar_Inventory:
+			playerShip->shipInventory->AddItemToInventory(itemToMove, false);
+			break;
+		case EInventoryID::Equipment_Inventory:
+			break;
+		case EInventoryID::Passive_Inventory:
+			break;
+	}
 }
 
 void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -3,19 +3,25 @@
 
 #include "Inventory.h"
 
-void UInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize)
+void UInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, EInventoryID id)
 {
 	maxSize = maxInventorySize;
 	currentSize = currentInventorySize;
+	inventoryID = id;
 }
 
-void UInventory::AddItemToInventory(USDIO_Item* newItem)
+void UInventory::AddItemToInventory(USDIO_Item* newItem, bool bIsPickup)
 {
 	//Adds the item if theres space
 	if (inventoryList.Num() < maxSize && inventoryList.Num() < currentSize)
 	{
 		inventoryList.Add(newItem);
-		OnPickupItem.Broadcast(newItem);
+
+		//Only run if the item is being picked up from world
+		if (bIsPickup)
+		{
+			OnPickupItem.Broadcast(newItem);
+		}
 	}
 }
 
@@ -57,4 +63,9 @@ void UInventory::RemoveItemFromInventory(FGuid itemID)
 
 	//Remove the item
 	inventoryList.Remove(itemToRemove);
+}
+
+EInventoryID UInventory::GetInventoryID()
+{
+	return inventoryID;
 }

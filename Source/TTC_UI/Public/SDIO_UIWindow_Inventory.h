@@ -13,8 +13,8 @@
 #include "Player_Hotbar.h"
 #include "SDIO_UIWindow_Inventory.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMoveItemToHotbar, FGuid, itemID);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMoveItemFromHotbar, FGuid, itemID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FMoveItemToHotbar, FGuid, itemID, EInventoryID, targetID, EInventoryID, originID);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMoveItemToInventory, FGuid, itemID, EInventoryID, id);
 
 UCLASS(meta = (ShortToolTip = "The Inventory window base class"))
 class TTC_UI_API USDIO_UIWindow_Inventory : public UUI_Window
@@ -35,10 +35,22 @@ private:
 	uint8 currentHotbarSize = 2;
 
 	/// <summary>
+	/// The last inventory to be interacted with. Does not include clicking an empty slot with an empty mouse.
+	/// </summary>
+	UPROPERTY()
+	EInventoryID lastInteractedInventory = EInventoryID::NOID;
+
+	/// <summary>
 	/// Event Delegate. Checks if either the inventory or hotbar contain a mouse item. If they do, swap the item between inventories.
 	/// </summary>
 	UFUNCTION()
-	void DelegateCheckForSwap(UButton_Item_Slot* clickedSlot);
+	void DelegateInventoryInteraction(UButton_Item_Slot* clickedSlot, EInventoryID id);
+
+	/// <summary>
+	/// Runs the handle item managment function in inventories based on the id.
+	/// </summary>
+	UFUNCTION()
+	void ReturnInventoryInteraction(UButton_Item_Slot* clickedSlot, USDIO_Item* swapItem, EInventoryID id);
 
 protected:
 	/// <summary>
@@ -73,11 +85,8 @@ protected:
 	FMargin slotMargin;
 
 public:
-	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item from the inventory to the hotbar."))
-	FMoveItemToHotbar onMoveItemToHotbar;
-
-	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item from the hotbar to the inventory."))
-	FMoveItemToHotbar onMoveItemFromHotbar;
+	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item between inventories."))
+	FMoveItemToHotbar onMoveItemBetweenInventories;
 
 	/// <summary>
 	/// The visual player inventory

@@ -17,6 +17,12 @@ UCLASS(meta = (ShortToolTip = "UI Inventory object. Contains the ui inventory an
 class SDIO_INVENTORY_API UUIInventory : public UObject
 {
 	GENERATED_BODY()
+private:
+	/// <summary>
+	/// Inventory ID
+	/// </summary>
+	UPROPERTY()
+	EInventoryID inventoryID = EInventoryID::NOID;
 
 protected:
 	/// <summary>
@@ -54,13 +60,19 @@ public:
 	/// UI Inventory object initializer
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers", meta = (Tooltip = "Initializes the ui inventory object. This must be ran after creating the object."))
-	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget);
+	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget, EInventoryID id);
 
 	/// <summary>
 	/// Adds the given item to an empty slot in the inventory containers
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Adds the given item to the inventory object."))
 	void AddItemToUIInventory(USDIO_Item* newItem);
+
+	/// <summary>
+	/// Returns the inventory ID
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Returns the inventory ID"))
+	EInventoryID GetInventoryID();
 };
 
 //////////////////////////////////////////////////////////
