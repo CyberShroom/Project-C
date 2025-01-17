@@ -3,44 +3,6 @@
 
 #include "Player_Inventory.h"
 
-void UPlayer_Inventory::OnClickHandler(UButton_Item_Slot* clickedSlot)
-{
-	InventoryInteractionEvent.Broadcast(clickedSlot, GetInventoryID());
-}
-
-void UPlayer_Inventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USDIO_Item* newItem)
-{
-	//Do nothing if the container doesn't exist in this array
-	if (!slotList.Contains(clickedSlot)) return;
-
-	if (mouseItem) //True if mouse contains an item
-	{
-		if (clickedSlot->GetContainedItem()) //True if there is a contained item
-		{
-			//True + True; swap the items.
-			clickedSlot->SetContainedItem(mouseItem);
-			mouseItem = clickedSlot->GetContainedItem();
-		}
-		else
-		{
-			//True + False; Place the mouse item into the container and remove the mouse item.
-			clickedSlot->SetContainedItem(mouseItem);
-			mouseItem = nullptr;
-		}
-	}
-	else if (newItem) //True only if a swap has occurred
-	{
-		mouseItem = clickedSlot->GetContainedItem();
-		clickedSlot->SetContainedItem(newItem);
-	}
-	else
-	{
-		//False + Assumed True; Place the item in the mouse and remove the item from the container
-		mouseItem = clickedSlot->GetContainedItem();
-		clickedSlot->SetContainedItem(nullptr);
-	}
-}
-
 void UPlayer_Inventory::FillList(UWidget* parent)
 {
 	//Get the uniform grid. This cast shouldn't produce errors due to BeginPlay.
@@ -62,7 +24,7 @@ void UPlayer_Inventory::FillList(UWidget* parent)
 		{
 			//Add it as a child of the panel and set its button event
 			panel->AddChildToUniformGrid(newSlot, FMath::FloorToInt((float)slotList.Num() / slotsPerRow), slotList.Num() % slotsPerRow);
-			newSlot->OnButtonClicked.AddUniqueDynamic(this, &UPlayer_Inventory::OnClickHandler);
+			newSlot->OnButtonClicked.AddUniqueDynamic(this, &UUIInventory::DelegateOnClickHandler);
 
 			slotList.Add(newSlot); //Add it to the list
 

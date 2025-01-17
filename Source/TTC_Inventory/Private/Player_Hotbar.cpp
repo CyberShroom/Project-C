@@ -3,11 +3,6 @@
 
 #include "player_Hotbar.h"
 
-void UPlayer_Hotbar::OnClickHandler(UButton_Item_Slot* clickedSlot)
-{
-	InventoryInteractionEvent.Broadcast(clickedSlot, GetInventoryID());
-}
-
 void UPlayer_Hotbar::FillList(UWidget* parent)
 {
 	//Get the uniform grid. This cast shouldn't produce errors due to BeginPlay.
@@ -34,8 +29,8 @@ void UPlayer_Hotbar::FillList(UWidget* parent)
 
 			panel->AddChildToUniformGrid(newSlot1, 0, slotList.Num() / 2);
 			panel->AddChildToUniformGrid(newSlot2, 1, slotList.Num() / 2);
-			newSlot1->OnButtonClicked.AddUniqueDynamic(this, &UPlayer_Hotbar::OnClickHandler);
-			newSlot2->OnButtonClicked.AddUniqueDynamic(this, &UPlayer_Hotbar::OnClickHandler);
+			newSlot1->OnButtonClicked.AddUniqueDynamic(this, &UUIInventory::DelegateOnClickHandler);
+			newSlot2->OnButtonClicked.AddUniqueDynamic(this, &UUIInventory::DelegateOnClickHandler);
 
 			slotList.Add(newSlot1); //Add it to the list
 			slotList.Add(newSlot2); //Add it to the list
@@ -45,37 +40,5 @@ void UPlayer_Hotbar::FillList(UWidget* parent)
 			UE_LOG(LogTemp, Error, TEXT("Player Hotbar failed to create an Item Slot Widget for the hotbar. Is widgetRef set correctly?"))
 			break;
 		}
-	}
-}
-
-void UPlayer_Hotbar::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USDIO_Item* newItem)
-{
-	if (!slotList.Contains(clickedSlot)) return;
-
-	if (mouseItem) //True if mouse contains an item
-	{
-		if (clickedSlot->GetContainedItem()) //True if there is a contained item
-		{
-			//True + True; swap the items.
-			clickedSlot->SetContainedItem(mouseItem);
-			mouseItem = clickedSlot->GetContainedItem();
-		}
-		else
-		{
-			//True + False; Place the mouse item into the container and remove the mouse item.
-			clickedSlot->SetContainedItem(mouseItem);
-			mouseItem = nullptr;
-		}
-	}
-	else if (newItem) //True only if a swap has occurred
-	{
-		mouseItem = clickedSlot->GetContainedItem();
-		clickedSlot->SetContainedItem(newItem);
-	}
-	else
-	{
-		//False + Assumed True; Place the item in the mouse and remove the item from the container
-		mouseItem = clickedSlot->GetContainedItem();
-		clickedSlot->SetContainedItem(nullptr);
 	}
 }

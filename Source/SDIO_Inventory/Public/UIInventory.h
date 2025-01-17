@@ -8,11 +8,11 @@
 #include "Item_Slot.h"
 #include "Components/UniformGridPanel.h"
 #include "Inventory.h"
+#include "Button_Item_Slot.h"
 #include "UIInventory.generated.h"
 
-/**
- * 
- */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FInventoryInteraction, UButton_Item_Slot*, slot, EInventoryID, id);
+
 UCLASS(meta = (ShortToolTip = "UI Inventory object. Contains the ui inventory and all logic associated with it."))
 class SDIO_INVENTORY_API UUIInventory : public UObject
 {
@@ -45,6 +45,11 @@ protected:
 
 public:
 	/// <summary>
+	/// Event signature. Called when a button within the inventory is clicked by the user.
+	/// </summary>
+	UPROPERTY(BlueprintAssignable, Category = "SDIO_Inventory | Events", meta = (Tooltip = "Called when the user clicks a button in the inventory."))
+	FInventoryInteraction OnInventoryInteraction;
+	/// <summary>
 	/// Reference to the child item slot
 	/// </summary>
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the widget to construct"))
@@ -57,6 +62,12 @@ public:
 	uint8 currentSize = 0;
 
 	/// <summary>
+	/// The item contained in the mouse.
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The item contained in the mouse."))
+	USDIO_Item* mouseItem = nullptr;
+
+	/// <summary>
 	/// UI Inventory object initializer
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers", meta = (Tooltip = "Initializes the ui inventory object. This must be ran after creating the object."))
@@ -67,6 +78,18 @@ public:
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Adds the given item to the inventory object."))
 	void AddItemToUIInventory(USDIO_Item* newItem);
+
+	/// <summary>
+	/// Broadcasts the onInventoryInteraction event. Should be assigned to the onClick event of buttons.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Broadcasts the onInventoryInteraction event. Should be assigned to the onClick event of buttons."))
+	void DelegateOnClickHandler(UButton_Item_Slot* clickedSlot);
+
+	/// <summary>
+	/// Handles logic on how the inventory is sorted.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC_Inventory", meta = (Tooltip = "Handles logic on how the inventory is sorted."))
+	void HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USDIO_Item* newItem);
 
 	/// <summary>
 	/// Returns the inventory ID

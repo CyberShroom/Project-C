@@ -117,11 +117,11 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 
 		//Initialize the player inventory
 		playerInventory->Initialize(24, 8, invRef, Inventory, subWidget, EInventoryID::Main_Inventory);
-		playerInventory->InventoryInteractionEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
+		playerInventory->OnInventoryInteraction.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
 
 		//Initialize the player hotbar
 		hotbarInventory->Initialize(8, 8, hotbarRef, Hotbar, subWidget, EInventoryID::Hotbar_Inventory);
-		hotbarInventory->InventoryInteractionEvent.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
+		hotbarInventory->OnInventoryInteraction.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
 
 		//Set the inventory panel size (Initialize contains the code for filling the inventory so this should run afterwards)
 		SetInventoryPanelSize();
