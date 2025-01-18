@@ -3,9 +3,10 @@
 
 #include "UIInventory.h"
 
-void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget, EInventoryID id)
+void UUIInventory::Initialize(uint8 maxInventorySize, uint8 currentInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget, EInventoryID id, UItem_Slot* mouseWidget)
 {
 	widgetRef = widget;
+	mouseItem = mouseWidget;
 	maxSize = maxInventorySize;
 	currentSize = currentInventorySize;
 	inventoryID = id;
@@ -50,30 +51,30 @@ void UUIInventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USD
 {
 	if (!slotList.Contains(clickedSlot)) return;
 
-	if (mouseItem) //True if mouse contains an item
+	if (mouseItem->GetContainedItem()) //True if mouse contains an item
 	{
 		if (clickedSlot->GetContainedItem()) //True if there is a contained item
 		{
 			//True + True; swap the items.
-			clickedSlot->SetContainedItem(mouseItem);
-			mouseItem = clickedSlot->GetContainedItem();
+			clickedSlot->SetContainedItem(mouseItem->GetContainedItem());
+			mouseItem->SetContainedItem(clickedSlot->GetContainedItem());
 		}
 		else
 		{
 			//True + False; Place the mouse item into the container and remove the mouse item.
-			clickedSlot->SetContainedItem(mouseItem);
-			mouseItem = nullptr;
+			clickedSlot->SetContainedItem(mouseItem->GetContainedItem());
+			mouseItem->SetContainedItem(nullptr);
 		}
 	}
 	else if (newItem) //True only if a swap has occurred
 	{
-		mouseItem = clickedSlot->GetContainedItem();
+		mouseItem->SetContainedItem(clickedSlot->GetContainedItem());
 		clickedSlot->SetContainedItem(newItem);
 	}
 	else
 	{
 		//False + Assumed True; Place the item in the mouse and remove the item from the container
-		mouseItem = clickedSlot->GetContainedItem();
+		mouseItem->SetContainedItem(clickedSlot->GetContainedItem());
 		clickedSlot->SetContainedItem(nullptr);
 	}
 }

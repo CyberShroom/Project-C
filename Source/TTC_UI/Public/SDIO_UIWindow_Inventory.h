@@ -11,9 +11,11 @@
 #include "TimerManager.h"
 #include "Player_Inventory.h"
 #include "Player_Hotbar.h"
+#include "Components/CanvasPanel.h"
 #include "SDIO_UIWindow_Inventory.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FMoveItemToHotbar, FGuid, itemID, EInventoryID, targetID, EInventoryID, originID);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FFinishInitialization, UItem_Slot*, mouseSlotRef);
 //DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FMoveItemToInventory, FGuid, itemID, EInventoryID, id);
 
 UCLASS(meta = (ShortToolTip = "The Inventory window base class"))
@@ -59,12 +61,21 @@ protected:
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the inventory slot for inventory creation."))
 	TSubclassOf<UButton_Item_Slot> subWidget;
 
+	/// <summary>
+	/// Contains a copy of the mouse slot to generate for the inventory.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the mouse slot for inventory creation."))
+	TSubclassOf<UItem_Slot> mouseWidget;
+
 	//Hierarchy References//
 	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
 	UUniformGridPanel* Hotbar;
 
 	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
 	UUniformGridPanel* Inventory;
+
+	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
+	UCanvasPanel* Canvas;
 
 	/// <summary>
 	/// A list of the inventory slots in the hotbar
@@ -88,6 +99,9 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item between inventories."))
 	FMoveItemToHotbar onMoveItemBetweenInventories;
 
+	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when this ui controller finishes initialization."))
+	FFinishInitialization onFinishInitialization;
+
 	/// <summary>
 	/// The visual player inventory
 	/// </summary>
@@ -99,6 +113,13 @@ public:
 	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The visual player hotbar."))
 	UPlayer_Hotbar* hotbarInventory;
+
+
+	/// <summary>
+	/// The mouse slot used by the inventory system.
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The mouse slot used by the inventory system."))
+	UItem_Slot* mouseSlot;
 
 	/// <summary>
 	/// Sets the margins of the inventory panel.

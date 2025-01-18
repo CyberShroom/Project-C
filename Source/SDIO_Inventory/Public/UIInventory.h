@@ -49,11 +49,18 @@ public:
 	/// </summary>
 	UPROPERTY(BlueprintAssignable, Category = "SDIO_Inventory | Events", meta = (Tooltip = "Called when the user clicks a button in the inventory."))
 	FInventoryInteraction OnInventoryInteraction;
+
 	/// <summary>
 	/// Reference to the child item slot
 	/// </summary>
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the widget to construct"))
 	TSubclassOf<UItem_Slot> widgetRef;
+
+	/// <summary>
+	/// Reference to the mouse item slot
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the widget to construct for the mouse"))
+	TSubclassOf<UItem_Slot> mouseRef;
 
 	/// <summary>
 	/// Current size of the inventory
@@ -65,13 +72,13 @@ public:
 	/// The item contained in the mouse.
 	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The item contained in the mouse."))
-	USDIO_Item* mouseItem = nullptr;
+	UItem_Slot* mouseItem = nullptr;
 
 	/// <summary>
 	/// UI Inventory object initializer
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers", meta = (Tooltip = "Initializes the ui inventory object. This must be ran after creating the object."))
-	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget, EInventoryID id);
+	void Initialize(uint8 maxInventorySize, uint8 initialInventorySize, UInventory* inventoryRef, UWidget* panelRef, TSubclassOf<UItem_Slot> widget, EInventoryID id, UItem_Slot* mouseWidget);
 
 	/// <summary>
 	/// Adds the given item to an empty slot in the inventory containers
@@ -96,6 +103,8 @@ public:
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Returns the inventory ID"))
 	EInventoryID GetInventoryID();
+
+	
 };
 
 //////////////////////////////////////////////////////////

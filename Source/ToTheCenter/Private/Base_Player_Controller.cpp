@@ -20,6 +20,7 @@ void ABase_Player_Controller::InitializeUIInventory()
 			//Check if the ui is loaded properly
 			if (IsValid(invRef) && IsValid(shipRef))
 			{
+				invRef->onFinishInitialization.AddUniqueDynamic(this, &ABase_Player_Controller::SetMouseSlot);
 				invRef->InitializeAttributes(playerInventory, shipRef->shipInventory);
 				invRef->onMoveItemBetweenInventories.AddUniqueDynamic(this, &ABase_Player_Controller::DelegateInventoryInteractionHandler);
 				return;
@@ -96,6 +97,11 @@ void ABase_Player_Controller::DelegateInventoryInteractionHandler(FGuid itemID, 
 
 	//Reflect this on the server's side
 	ServerRPC_MoveItemBetweenInventories(itemID, targetID, originID);
+}
+
+void ABase_Player_Controller::SetMouseSlot(UItem_Slot* mouseRef)
+{
+	mouseSlot = mouseRef;
 }
 
 void ABase_Player_Controller::Initialize()

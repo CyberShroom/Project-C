@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "UI_Manager.h"
+#include "Item_Slot.h"
 #include "SDIO_UIManager_Game.generated.h"
 
 /**

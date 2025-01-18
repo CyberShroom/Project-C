@@ -24,34 +24,18 @@ private:
 	/// </summary>
 	UFUNCTION()
 	void DelegateButtonClicked();
-
-	/// <summary>
-	/// Sets the sprite image of the child class.
-	/// </summary>
-	UFUNCTION()
-	void SetSprite();
 	
 protected:
 	//Object References//
 	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
 	UButton* Button;
 
-	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
-	UImage* Sprite;
-
 public:
-	/// <summary>
-	/// Returns the UImage of this slot.
-	/// </summary>
-	UFUNCTION(BlueprintPure, Category = "SDIO_Inventory", meta = (Tooltip = "Returns the UImage object of this item slot."))
-	UImage* GetSprite();
-
 	/// <summary>
 	/// Event Signature. Meant to be called when the button is clicked.
 	/// </summary>
 	UPROPERTY(BlueprintAssignable, Category = "SDIO_Inventory | Events", meta = (Tooltip = "An event that, when called, attempts to move items between inventory slots."))
 	FInventoryButtonClicked OnButtonClicked;
 
-	virtual void SetContainedItem(USDIO_Item* newItem) override;
 	virtual void NativeConstruct() override;
 };

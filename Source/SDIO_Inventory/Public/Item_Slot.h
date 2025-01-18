@@ -15,11 +15,20 @@ class SDIO_INVENTORY_API UItem_Slot : public UUserWidget
 	GENERATED_BODY()
 
 protected:
+	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
+	UImage* Sprite;
+
 	/// <summary>
 	/// The item contained within this item_slot
 	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The item contained within this slot."))
 	USDIO_Item* containedItem = nullptr;
+
+	/// <summary>
+	/// Sets the sprite image of the child class.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory", meta = (Tooltip = "Sets the image sprite."))
+	void SetSprite();
 
 public:
 	/// <summary>
@@ -27,6 +36,12 @@ public:
 	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Defines what kind of items can be stored in this slot."))
 	ESlotType type = ESlotType::Universal;
+
+	/// <summary>
+	/// Returns the UImage of this slot.
+	/// </summary>
+	UFUNCTION(BlueprintPure, Category = "SDIO_Inventory", meta = (Tooltip = "Returns the UImage object of this item slot."))
+	UImage* GetSprite();
 
 	/// <summary>
 	/// Returns the item contained in this slot.

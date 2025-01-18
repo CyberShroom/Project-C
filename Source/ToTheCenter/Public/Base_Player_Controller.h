@@ -36,7 +36,19 @@ private:
 	UFUNCTION()
 	void DelegateInventoryInteractionHandler(FGuid itemID, EInventoryID targetID, EInventoryID originID);
 
+	/// <summary>
+	/// Sets mouseSlot.
+	/// </summary>
+	UFUNCTION()
+	void SetMouseSlot(UItem_Slot* mouseRef);
+
 protected:
+	/// <summary>
+	/// Mouse slot for the inventory.
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Mouse slot for the inventory."))
+	UItem_Slot* mouseSlot;
+
 	/// <summary>Initializes the player controller.</summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC | Initializers", meta = (Tooltip = "Initializes the base player controller. This must be ran in BeginPlay BP!"))
 	void Initialize();
