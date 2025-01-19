@@ -14,7 +14,9 @@ UCLASS(meta = (ShortToolTip = "Game UI Manager base class."))
 class TTC_UI_API USDIO_UIManager_Game : public UUI_Manager
 {
 	GENERATED_BODY()
-	
+
+
+
 protected:
 	////Object References////
 	UPROPERTY(BlueprintReadWrite, Category = "Hierarchy References", meta = (BindWidget))

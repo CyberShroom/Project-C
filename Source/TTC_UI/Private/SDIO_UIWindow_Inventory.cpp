@@ -90,7 +90,7 @@ void USDIO_UIWindow_Inventory::SetInventoryPanelSize()
 	if (playerInventory->currentRows != 0)
 	{
 		FVector2D panelSize = inventoryPanelSlotReference->GetSize();
-		panelSize.Y = 68 * playerInventory->currentRows;
+		panelSize.Y = 52 * playerInventory->currentRows;
 		inventoryPanelSlotReference->SetSize(panelSize);
 		UE_LOG(LogTemp, Error, TEXT("%f"), panelSize.Y);
 	}
