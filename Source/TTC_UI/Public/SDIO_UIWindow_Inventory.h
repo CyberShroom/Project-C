@@ -89,12 +89,6 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Reference to the UCanvasPanelSlot of the inventory panel."))
 	UCanvasPanelSlot* inventoryPanelSlotReference;
 
-	/// <summary>
-	/// The FMargin of the panel slots. Used to change the size of the panel in the dynamic inventory.
-	/// </summary>
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The FMargin of the panel slots. Used to change the size of the panel in the dynamic inventory."))
-	FMargin slotMargin;
-
 public:
 	UPROPERTY(BlueprintAssignable, Category = "TTC_UI | Events", meta = (Tooltip = "Called when the user moves an item between inventories."))
 	FMoveItemToHotbar onMoveItemBetweenInventories;
@@ -114,12 +108,23 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The visual player hotbar."))
 	UPlayer_Hotbar* hotbarInventory;
 
-
 	/// <summary>
 	/// The mouse slot used by the inventory system.
 	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The mouse slot used by the inventory system."))
 	UItem_Slot* mouseSlot;
+
+	/// <summary>
+	/// When true, the inventory is covering the screen. When false, the inventory is hidden aside from the hotbar.
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "When true, the inventory is covering the screen. When false, the inventory is hidden aside from the hotbar."))
+	bool bIsMinimized = false;
+
+	/// <summary>
+	/// Speed to play the inventory toggle animation.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Speed to play the inventory toggle animation."))
+	float toggleSpeed = 2.0;
 
 	/// <summary>
 	/// Sets the margins of the inventory panel.
@@ -132,6 +137,14 @@ public:
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Initializes the inventory panel and inventory. Meant to be called from the invRef location."))
 	void InitializeAttributes(UInventory* invRef, UInventory* hotbarRef);
+
+	/// <summary>
+	/// Toggles the inventory between minimized and full screen.
+	/// </summary>
+	/// <param name="isMinimized">If true, minimize the inventory. If false, make the inventory fullscreen.</param>
+	/// <param name="ignoreGuard">If true, ignore the guard statement and forcibly run the animation. This should always be false when called from outside the funtion.</param>
+	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Toggles the inventory between minimized and full screen."))
+	void ToggleInventoryState(bool isMinimized);
 
 	virtual void NativeConstruct() override;
 };

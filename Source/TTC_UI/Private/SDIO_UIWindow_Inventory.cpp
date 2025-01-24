@@ -5,6 +5,12 @@
 
 void USDIO_UIWindow_Inventory::DelegateInventoryInteraction(UButton_Item_Slot* clickedSlot, EInventoryID id)
 {
+	//If the inventory is minimized. DO NOTHING!
+	if (bIsMinimized)
+	{
+		return;
+	}
+
 	// Flag that determines if id should be the next last inventory interaction at end of function
 	bool bUpdateInteraction = false;
 
@@ -112,7 +118,6 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 
 		//Set the panelslot reference and the slotMargin reference
 		inventoryPanelSlotReference = panel;
-		slotMargin = inventoryPanelSlotReference->GetOffsets();
 
 		//Initialize the player inventory
 		playerInventory->Initialize(24, 8, invRef, Inventory, subWidget, EInventoryID::Main_Inventory, mouseSlot);
@@ -130,6 +135,59 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 	{
 		//If not, try again next frame
 		GetWorld()->GetTimerManager().SetTimerForNextTick([this, invRef, hotbarRef]() {InitializeAttributes(invRef, hotbarRef); });
+	}
+}
+
+void USDIO_UIWindow_Inventory::ToggleInventoryState(bool isMinimized)
+{
+	bIsMinimized = isMinimized;
+	FVector2D hotbarTranslation = Hotbar->GetRenderTransform().Translation;
+
+	//tp hotbar immediatly when false
+	if (bIsMinimized == false)
+	{
+		hotbarTranslation.X = 0;
+		Hotbar->SetRenderTranslation(hotbarTranslation);
+
+		mouseSlot->GetSprite()->SetOpacity(100);
+	}
+
+	//Get information on the inventory panel since its dynamically sized
+	float sizeY = inventoryPanelSlotReference->GetSize().Y + 10;
+	FVector2D currentLocation = Inventory->GetRenderTransform().Translation;
+
+	//Move the panel based on the toggle
+	if (isMinimized)
+	{
+		currentLocation.Y += toggleSpeed;
+	}
+	else
+	{
+		currentLocation.Y -= toggleSpeed;
+	}
+
+	//Set the new translation
+	Inventory->SetRenderTranslation(currentLocation);
+
+	//Continue running until the translation is finished
+	if (bIsMinimized == true && sizeY >= currentLocation.Y)
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, isMinimized]() {ToggleInventoryState(bIsMinimized); });
+		return;
+	}
+	else if (bIsMinimized == false && currentLocation.Y > 0)
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, isMinimized]() {ToggleInventoryState(bIsMinimized); });
+		return;
+	}
+
+	//tp hotbar when animation is done
+	if (bIsMinimized)
+	{
+		hotbarTranslation.X = 300;
+		Hotbar->SetRenderTranslation(hotbarTranslation);
+
+		mouseSlot->GetSprite()->SetOpacity(0);
 	}
 }
 
