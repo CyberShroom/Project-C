@@ -5,6 +5,7 @@
 #include "CoreMinimal.h"
 #include "UI_Window_BaseOptions.h"
 #include "SDIO_UI_TextButton.h"
+#include "Components/Slider.h"
 #include "SDIO_UIWindow_Options.generated.h"
 
 /**
