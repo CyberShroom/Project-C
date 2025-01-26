@@ -58,7 +58,6 @@
 				"TTC_Inventory"
 			]
 		}
-
 	],
 	"Plugins": [
 		{
@@ -68,5 +67,12 @@
 				"Editor"
 			]
 		}
+	],
+	"TargetPlatforms": [
+		"Linux",
+		"LinuxArm64",
+		"Mac",
+		"TVOS",
+		"Windows"
 	]
 }
