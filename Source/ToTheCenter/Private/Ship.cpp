@@ -16,6 +16,123 @@ AShip::AShip()
 	camera->SetupAttachment(scene);
 }
 
+void AShip::ShipTakeDamage(float damage)
+{
+	if (HasAuthority())
+	{
+		//If shield is active, damage the shield
+		if (currentShield > 0)
+		{
+			//If damage would go over shield, nullify extra damage
+			if (currentShield - damage < 0)
+			{
+				damage = currentShield;
+			}
+
+			//Deal damage to the shield
+			currentShield -= damage;
+
+			//Run on shield damage items
+			onShieldDamage.Broadcast(currentShield, damage);
+
+			//Do not run rpc if host
+			if (GetController()->IsLocalPlayerController() == false)
+			{
+				//Notify client that they took damage so client can run cosmetic changes.
+				ClientRPC_NotifyClientOfShieldChange(damage);
+			}
+		}
+		else
+		{
+			//Deal damage to hull
+			currentHull -= damage;
+
+			//Run on damage items
+			onHullDamage.Broadcast(currentHull, damage);
+
+			//Do not run rpc if host
+			if (GetController()->IsLocalPlayerController() == false)
+			{
+				//Notify client that they took damage so client can run cosmetic changes.
+				ClientRPC_NotifyClientOfHullChange(true, damage);
+			}
+		}
+
+		outOfCombatTimer = 5;
+	}
+}
+
+void AShip::HealHull(float heal)
+{
+	if (HasAuthority())
+	{
+		//If health is max, do nothing
+		if (currentHull > maxHull)
+		{
+			return;
+		}
+
+		//Ensure health does not go above the max
+		if (currentHull + heal > maxHull)
+		{
+			heal = maxHull - currentHull;
+			currentHull = maxHull;
+		}
+		else
+		{
+			currentHull += heal;
+		}
+
+		//Run on heal items
+		onHullHeal.Broadcast(currentHull, heal);
+		
+		//Do not run rpc if host
+		if (GetController()->IsLocalPlayerController() == false)
+		{
+			//Notify client that they healed so client can run cosmetic changes.
+			ClientRPC_NotifyClientOfHullChange(false, heal);
+		}
+	}
+}
+
+float AShip::GetMaxHull()
+{
+	return maxHull;
+}
+
+float AShip::GetMaxShield()
+{
+	return maxShield;
+}
+
+void AShip::OnRep_maxHull()
+{
+	onMaxHullChanged.Broadcast(maxHull);
+}
+
+void AShip::OnRep_currentHull()
+{
+	//Do 0 because on damage effects will ignore 0's preferably
+	onHullDamage.Broadcast(currentHull, 0);
+}
+
+void AShip::OnRep_maxShield()
+{
+	onMaxShieldChanged.Broadcast(maxShield);
+}
+
+void AShip::OnRep_currentShield()
+{
+	UE_LOG(LogTemp, Error, TEXT("Current Shield Broadcasting! Shield is = %f"), currentShield);
+	//Do 0 because on damage effects will ignore 0's preferably
+	onShieldDamage.Broadcast(currentShield, 0);
+}
+
+void AShip::ClientRPC_NotifyClientOfShieldChange_Implementation(float amount)
+{
+	onShieldDamage.Broadcast(currentShield, amount);
+}
+
 // Called when the game starts or when spawned
 void AShip::BeginPlay()
 {
@@ -36,11 +153,52 @@ void AShip::TurnShip(float joystickValue)
 	camera->AddRelativeRotation(FRotator(0.0, turnSpeed * 75 * joystickValue * -1, 0.0));
 }
 
+void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, float amount)
+{
+	if (isDamage)
+	{
+		onHullDamage.Broadcast(currentHull, amount);
+	}
+	else
+	{
+		onHullHeal.Broadcast(currentHull, amount);
+	}
+}
+
 // Called every frame
 void AShip::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
+	if (HasAuthority())
+	{
+		//While in combat, do not regen shield
+		if (outOfCombatTimer > 0)
+		{
+			shieldRegenTimer = 0;
+			outOfCombatTimer -= DeltaTime;
+		}
+		else if (currentShield < maxShield) //Only regen shield if server and also shield is less than max
+		{
+			shieldRegenTimer += DeltaTime;
 
+			if (shieldRegenTimer >= 1 / shieldRegenPerSecond)
+			{
+				shieldRegenTimer -= 1 / shieldRegenPerSecond;
+				currentShield += 1;
+
+				//If this is the host, the event must be called manually. OnRep will not run.
+				if (GetController()->IsLocalPlayerController())
+				{
+					onShieldDamage.Broadcast(currentShield, 0);
+				}
+			}
+		}
+		else
+		{
+			//If nothing is happening, ensure shield timer is reset
+			shieldRegenTimer = 0;
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -55,5 +213,10 @@ void AShip::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 
 	DOREPLIFETIME(AShip, moveSpeed);
 	DOREPLIFETIME(AShip, turnSpeed);
+	DOREPLIFETIME(AShip, maxHull)
+	DOREPLIFETIME(AShip, currentHull);
+	DOREPLIFETIME(AShip, armor);
+	DOREPLIFETIME(AShip, maxShield);
+	DOREPLIFETIME(AShip, currentShield);
 }
 

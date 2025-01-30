@@ -42,6 +42,9 @@ private:
 	UFUNCTION()
 	void SetMouseSlot(UItem_Slot* mouseRef);
 
+	UFUNCTION()
+	void InitializeHealthSystem(USDIO_UIWindow_Inventory* invRef, AShip* shipRef);
+
 protected:
 	/// <summary>
 	/// Mouse slot for the inventory.

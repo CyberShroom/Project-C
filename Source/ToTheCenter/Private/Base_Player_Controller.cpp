@@ -23,6 +23,9 @@ void ABase_Player_Controller::InitializeUIInventory()
 				invRef->onFinishInitialization.AddUniqueDynamic(this, &ABase_Player_Controller::SetMouseSlot);
 				invRef->InitializeAttributes(playerInventory, shipRef->shipInventory);
 				invRef->onMoveItemBetweenInventories.AddUniqueDynamic(this, &ABase_Player_Controller::DelegateInventoryInteractionHandler);
+
+				//Once finished, Initialize the player ui health system
+				InitializeHealthSystem(invRef, shipRef);
 				return;
 			}
 		}
@@ -104,10 +107,29 @@ void ABase_Player_Controller::SetMouseSlot(UItem_Slot* mouseRef)
 	mouseSlot = mouseRef;
 }
 
+void ABase_Player_Controller::InitializeHealthSystem(USDIO_UIWindow_Inventory* invRef, AShip* shipRef)
+{
+	//Setup hull events
+	shipRef->onHullDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateHullValue);
+	shipRef->onHullHeal.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateHullValue);
+	shipRef->onMaxHullChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxHullValue);
+
+	//Setup shield events
+	shipRef->onShieldDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateShieldValue);
+	shipRef->onMaxShieldChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxShieldValue);
+
+	invRef->UpdateMaxHullValue(shipRef->GetMaxHull());
+	invRef->UpdateHullValue(shipRef->GetMaxHull(), 0);
+	invRef->UpdateMaxShieldValue(shipRef->GetMaxShield());
+	invRef->UpdateShieldValue(shipRef->GetMaxShield(), 0);
+}
+
 void ABase_Player_Controller::Initialize()
 {
+	//Create the inventory object
 	playerInventory = NewObject<UInventory>();
 
+	//Set the player ship location
 	if (GetPawn())
 	{
 		GetPawn()->SetActorLocation(FVector(0.0, 0.0, 0.0));
@@ -118,6 +140,7 @@ void ABase_Player_Controller::Initialize()
 		UE_LOG(LogTemp, Error, TEXT("Failed to find a UShip that belongs to this player controller."));
 	}
 
+	//Initialize the inventory and ui inventory
 	playerInventory->Initialize(24, 8, EInventoryID::Main_Inventory);
 	InitializeUIInventory();
 }

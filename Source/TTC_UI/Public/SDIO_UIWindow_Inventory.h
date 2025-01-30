@@ -12,6 +12,7 @@
 #include "Player_Inventory.h"
 #include "Player_Hotbar.h"
 #include "Components/CanvasPanel.h"
+#include "DynamicBar.h"
 #include "SDIO_UIWindow_Inventory.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FMoveItemToHotbar, FGuid, itemID, EInventoryID, targetID, EInventoryID, originID);
@@ -76,6 +77,12 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
 	UCanvasPanel* Canvas;
+
+	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
+	UDynamicBar* HealthBar;
+
+	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
+	UDynamicBar* ShieldBar;
 
 	/// <summary>
 	/// A list of the inventory slots in the hotbar
@@ -145,6 +152,30 @@ public:
 	/// <param name="ignoreGuard">If true, ignore the guard statement and forcibly run the animation. This should always be false when called from outside the funtion.</param>
 	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Toggles the inventory between minimized and full screen."))
 	void ToggleInventoryState(bool isMinimized);
+
+	/// <summary>
+	/// Changes the hull value in the health bar. This is purely cosmetic.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the hull value in the health bar. This is purely cosmetic."))
+	void UpdateHullValue(float newValue, float amountChanged);
+
+	/// <summary>
+	/// Changes the max hull value in the health bar. This is purely cosmetic.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the max hull value in the health bar. This is purely cosmetic."))
+	void UpdateMaxHullValue(float newValue);
+
+	/// <summary>
+	/// Changes the shield value in the health bar. This is purely cosmetic.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the shield value in the health bar. This is purely cosmetic."))
+	void UpdateShieldValue(float newValue, float amountChanged);
+
+	/// <summary>
+	/// Changes the max shield value in the health bar. This is purely cosmetic.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the max shield value in the health bar. This is purely cosmetic."))
+	void UpdateMaxShieldValue(float newValue);
 
 	virtual void NativeConstruct() override;
 };

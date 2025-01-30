@@ -98,7 +98,6 @@ void USDIO_UIWindow_Inventory::SetInventoryPanelSize()
 		FVector2D panelSize = inventoryPanelSlotReference->GetSize();
 		panelSize.Y = 52 * playerInventory->currentRows;
 		inventoryPanelSlotReference->SetSize(panelSize);
-		UE_LOG(LogTemp, Error, TEXT("%f"), panelSize.Y);
 	}
 }
 
@@ -115,6 +114,7 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 		//Instantiate the Mouse Slot
 		mouseSlot = CreateWidget<UItem_Slot>(this, mouseWidget);
 		Canvas->AddChildToCanvas(mouseSlot);
+		Cast<UCanvasPanelSlot>(mouseSlot->Slot)->SetZOrder(2);
 
 		//Set the panelslot reference and the slotMargin reference
 		inventoryPanelSlotReference = panel;
@@ -129,6 +129,11 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 
 		//Set the inventory panel size (Initialize contains the code for filling the inventory so this should run afterwards)
 		SetInventoryPanelSize();
+
+		//Initialzie top left bars
+		HealthBar->InitializeAttributes(FLinearColor::Red, FLinearColor::Green, 0, 0);
+		ShieldBar->InitializeAttributes(FLinearColor::Blue, FLinearColor(0.0f, 1.0f, 1.0f, 1.0f), 0, 0);
+
 		onFinishInitialization.Broadcast(mouseSlot);
 	}
 	else
@@ -192,6 +197,28 @@ void USDIO_UIWindow_Inventory::ToggleInventoryState(bool isMinimized)
 
 		mouseSlot->GetSprite()->SetOpacity(0);
 	}
+}
+
+void USDIO_UIWindow_Inventory::UpdateHullValue(float newValue, float amountChanged)
+{
+	HealthBar->SetLeftVarValue(newValue);
+	HealthBar->UpdateText();
+}
+
+void USDIO_UIWindow_Inventory::UpdateMaxHullValue(float newValue)
+{
+	HealthBar->SetRightVarValue(newValue);
+}
+
+void USDIO_UIWindow_Inventory::UpdateShieldValue(float newValue, float amountChanged)
+{
+	ShieldBar->SetLeftVarValue(newValue);
+	ShieldBar->UpdateText();
+}
+
+void USDIO_UIWindow_Inventory::UpdateMaxShieldValue(float newValue)
+{
+	ShieldBar->SetRightVarValue(newValue);
 }
 
 void USDIO_UIWindow_Inventory::NativeConstruct()
