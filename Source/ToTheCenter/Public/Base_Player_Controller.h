@@ -11,6 +11,8 @@
 #include "Base_HUD.h"
 #include "SDIO_UIWindow_Inventory.h"
 #include "TTC_Item.h"
+#include "Components/AudioComponent.h"
+#include "Sound/SoundCue.h"
 #include "Base_Player_Controller.generated.h"
 
 class USDIO_UIWindow_Inventory; //Forward declaration
@@ -23,6 +25,12 @@ class TOTHECENTER_API ABase_Player_Controller : public APlayerController
 private:
 	UPROPERTY()
 	USDIO_UIWindow_Inventory* inventoryUIReference; //Forward declaration plz ignore
+
+	UPROPERTY()
+	UAudioComponent* hullDamageAudioComponent;
+
+	UPROPERTY()
+	UAudioComponent* shieldDamageAudioComponent;
 
 	/// <summary>
 	/// Attempts to run the initializer for the UI Inventory.
@@ -44,6 +52,18 @@ private:
 
 	UFUNCTION()
 	void InitializeHealthSystem(USDIO_UIWindow_Inventory* invRef, AShip* shipRef);
+	
+	/// <summary>
+	/// Plays the damage sound cue when the hull takes damage
+	/// </summary>
+	UFUNCTION()
+	void PlayHullDamageSoundCue(float currentHull, float damage);
+
+	/// <summary>
+	/// Plays the damage sound cue when the shield takes damage
+	/// </summary>
+	UFUNCTION()
+	void PlayShieldDamageSoundCue(float currentShield, float damage);
 
 protected:
 	/// <summary>
@@ -52,13 +72,25 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Mouse slot for the inventory."))
 	UItem_Slot* mouseSlot;
 
-	/// <summary>Initializes the player controller.</summary>
-	UFUNCTION(BlueprintCallable, Category = "TTC | Initializers", meta = (Tooltip = "Initializes the base player controller. This must be ran in BeginPlay BP!"))
-	void Initialize();
-
 	/// <summary>Reference to the AShip subclass of the pawn.</summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Reference to the player pawn."))
 	AShip* playerShip;
+
+	/// <summary>
+	/// Sound that plays when the connected pawn takes damage.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Sound that plays when the connected pawn takes damage."))
+	USoundCue* hullDamageSound;
+
+	/// <summary>
+	/// Sound that plays when the connected pawn takes damage.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Sound that plays when the connected pawn takes damage."))
+	USoundCue* shieldDamageSound;
+
+	/// <summary>Initializes the player controller.</summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC | Initializers", meta = (Tooltip = "Initializes the base player controller. This must be ran in BeginPlay BP!"))
+	void Initialize();
 
 public:
 	/// <summary>
@@ -87,4 +119,6 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UTTC_Item> itemRef;
+
+	ABase_Player_Controller();
 };

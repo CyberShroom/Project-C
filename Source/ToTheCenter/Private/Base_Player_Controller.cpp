@@ -111,11 +111,13 @@ void ABase_Player_Controller::InitializeHealthSystem(USDIO_UIWindow_Inventory* i
 {
 	//Setup hull events
 	shipRef->onHullDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateHullValue);
+	shipRef->onHullDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayHullDamageSoundCue);
 	shipRef->onHullHeal.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateHullValue);
 	shipRef->onMaxHullChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxHullValue);
 
 	//Setup shield events
 	shipRef->onShieldDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateShieldValue);
+	shipRef->onShieldDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayShieldDamageSoundCue);
 	shipRef->onMaxShieldChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxShieldValue);
 
 	invRef->UpdateMaxHullValue(shipRef->GetMaxHull());
@@ -124,10 +126,42 @@ void ABase_Player_Controller::InitializeHealthSystem(USDIO_UIWindow_Inventory* i
 	invRef->UpdateShieldValue(shipRef->GetMaxShield(), 0);
 }
 
+void ABase_Player_Controller::PlayHullDamageSoundCue(float currentHull, float damage)
+{
+	if (damage <= 0)
+	{
+		return;
+	}
+
+	hullDamageAudioComponent->Play();
+}
+
+void ABase_Player_Controller::PlayShieldDamageSoundCue(float currentShield, float damage)
+{
+	if (damage <= 0)
+	{
+		return;
+	}
+
+	shieldDamageAudioComponent->Play();
+}
+
 void ABase_Player_Controller::Initialize()
 {
 	//Create the inventory object
 	playerInventory = NewObject<UInventory>();
+
+	if (hullDamageSound && shieldDamageSound)
+	{
+		//Set audio component sounds
+		hullDamageAudioComponent->SetSound(hullDamageSound);
+		shieldDamageAudioComponent->SetSound(shieldDamageSound);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Player Controller failed to load audio. One or more Sound Cues are not set or failed to load!"));
+	}
+	
 
 	//Set the player ship location
 	if (GetPawn())
@@ -153,6 +187,18 @@ void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bo
 	{
 		ClientRPC_AddItemToInventory(newItem->instanceID, bIsPickup);
 	}
+}
+
+ABase_Player_Controller::ABase_Player_Controller()
+{
+	//Create audio components
+	hullDamageAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("hullAudio"));
+	hullDamageAudioComponent->bAutoActivate = false; // Prevent it from playing on start
+	hullDamageAudioComponent->SetupAttachment(RootComponent);
+
+	shieldDamageAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("shieldAudio"));
+	shieldDamageAudioComponent->bAutoActivate = false; // Prevent it from playing on start
+	shieldDamageAudioComponent->SetupAttachment(RootComponent);
 }
 
 void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID, bool bIsPickup)
