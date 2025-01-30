@@ -120,11 +120,11 @@ void USDIO_UIWindow_Inventory::InitializeAttributes(UInventory* invRef, UInvento
 		inventoryPanelSlotReference = panel;
 
 		//Initialize the player inventory
-		playerInventory->Initialize(24, 8, invRef, Inventory, subWidget, EInventoryID::Main_Inventory, mouseSlot);
+		playerInventory->Initialize(24, invRef->currentSize, invRef, Inventory, subWidget, EInventoryID::Main_Inventory, mouseSlot);
 		playerInventory->OnInventoryInteraction.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
 
 		//Initialize the player hotbar
-		hotbarInventory->Initialize(8, 8, hotbarRef, Hotbar, subWidget, EInventoryID::Hotbar_Inventory, mouseSlot);
+		hotbarInventory->Initialize(8, hotbarRef->currentSize, hotbarRef, Hotbar, subWidget, EInventoryID::Hotbar_Inventory, mouseSlot);
 		hotbarInventory->OnInventoryInteraction.AddUniqueDynamic(this, &USDIO_UIWindow_Inventory::DelegateInventoryInteraction);
 
 		//Set the inventory panel size (Initialize contains the code for filling the inventory so this should run afterwards)
@@ -149,7 +149,10 @@ void USDIO_UIWindow_Inventory::ToggleInventoryState(bool isMinimized)
 		hotbarTranslation.X = 0;
 		Hotbar->SetRenderTranslation(hotbarTranslation);
 
-		mouseSlot->GetSprite()->SetOpacity(100);
+		if (mouseSlot->GetContainedItem())
+		{
+			mouseSlot->GetSprite()->SetOpacity(100);
+		}
 	}
 
 	//Get information on the inventory panel since its dynamically sized

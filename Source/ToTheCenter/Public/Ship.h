@@ -15,12 +15,6 @@ class TOTHECENTER_API AShip : public APawn
 	GENERATED_BODY()
 
 protected:
-	/// <summary>
-	/// Current size of the hotbar
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Current size of the hotbar"))
-	uint8 currentHotbarSize = 2;
-
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	USceneComponent* scene;
 
@@ -31,12 +25,12 @@ protected:
 	virtual void BeginPlay() override;
 
 	/// <summary>The ships move speed</summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships move speed."))
-	float moveSpeed = 100.0;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships move speed."))
+	float moveSpeed = 1.0;
 
 	/// <summary>The ships turn speed</summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
-	float turnSpeed = 100.0;
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
+	float turnSpeed = 1.0;
 
 	/// <summary>Contains logic for how this ship should move.</summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Ship", meta = (Tooltip = "Tells the ship to move. joystickValue is a modifier between 0 and 1."))
@@ -52,10 +46,10 @@ public:
 	UInventory* shipInventory;
 
 	/// <summary>
-	/// Adds an item to the ships hotbar
+	/// Current size of the hotbar
 	/// </summary>
-	UFUNCTION(BlueprintCallable, Category = "TTC", meta = (Tooltip = "Adds an item to the ships hotbar"))
-	void AdvancedAddItemToInventory(USDIO_Item* newItem);
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Current size of the hotbar"))
+	uint8 currentHotbarSize = 2;
 
 	// Sets default values for this pawn's properties
 	AShip();
@@ -65,5 +59,7 @@ public:
 
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
+	// Called to replicate movement
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 
 };

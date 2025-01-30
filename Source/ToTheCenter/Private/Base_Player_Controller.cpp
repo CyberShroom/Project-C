@@ -196,11 +196,3 @@ void ABase_Player_Controller::ServerRPC_MoveItemBetweenInventories_Implementatio
 	}
 }
 
-void ABase_Player_Controller::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
-{
-	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
-
-	DOREPLIFETIME(ABase_Player_Controller, moveSpeed);
-	DOREPLIFETIME(ABase_Player_Controller, turnSpeed);
-}
-

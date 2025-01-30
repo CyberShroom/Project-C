@@ -64,14 +64,6 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The players logical inventory"))
 	UInventory* playerInventory;
 
-	/// <summary>The ships move speed</summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships move speed."))
-	float moveSpeed = 100.0;
-
-	/// <summary>The ships turn speed</summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
-	float turnSpeed = 100.0;
-
 	/// <summary>
 	/// Adds an item to the players inventory. Can only be called from the server.
 	/// </summary>
@@ -92,6 +84,4 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UTTC_Item> itemRef;
-
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
 };
