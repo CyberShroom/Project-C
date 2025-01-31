@@ -111,19 +111,33 @@ void ABase_Player_Controller::InitializeHealthSystem(USDIO_UIWindow_Inventory* i
 {
 	//Setup hull events
 	shipRef->onHullDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateHullValue);
-	shipRef->onHullDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayHullDamageSoundCue);
 	shipRef->onHullHeal.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateHullValue);
 	shipRef->onMaxHullChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxHullValue);
 
 	//Setup shield events
 	shipRef->onShieldDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateShieldValue);
-	shipRef->onShieldDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayShieldDamageSoundCue);
 	shipRef->onMaxShieldChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxShieldValue);
+
+	//Setup Armor events
+	shipRef->onArmorDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateArmorValue);
+	shipRef->onGainArmor.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateArmorValue);
+
+	//Setup Sound events, only if its local controller. I do not want to hear you take damage. Pls and Thx.
+	if (IsLocalPlayerController())
+	{
+		shipRef->onHullDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayHullDamageSoundCue);
+		shipRef->onShieldDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayShieldDamageSoundCue);
+		shipRef->onArmorDamage.AddUniqueDynamic(this, &ABase_Player_Controller::PlayArmorDamageSoundCue);
+
+		shipRef->onShieldBreak.AddUniqueDynamic(this, &ABase_Player_Controller::PlayShieldBreakSoundCue);
+		shipRef->onArmorBreak.AddUniqueDynamic(this, &ABase_Player_Controller::PlayArmorBreakSoundCue);
+	}
 
 	invRef->UpdateMaxHullValue(shipRef->GetMaxHull());
 	invRef->UpdateHullValue(shipRef->GetMaxHull(), 0);
 	invRef->UpdateMaxShieldValue(shipRef->GetMaxShield());
 	invRef->UpdateShieldValue(shipRef->GetMaxShield(), 0);
+	invRef->UpdateArmorValue(shipRef->GetArmor(), 0);
 }
 
 void ABase_Player_Controller::PlayHullDamageSoundCue(float currentHull, float damage)
@@ -146,16 +160,39 @@ void ABase_Player_Controller::PlayShieldDamageSoundCue(float currentShield, floa
 	shieldDamageAudioComponent->Play();
 }
 
+void ABase_Player_Controller::PlayArmorDamageSoundCue(float currentArmor, float damage)
+{
+	if (damage <= 0)
+	{
+		return;
+	}
+
+	armorDamageAudioComponent->Play();
+}
+
+void ABase_Player_Controller::PlayShieldBreakSoundCue()
+{
+	shieldBreakAudioComponent->Play();
+}
+
+void ABase_Player_Controller::PlayArmorBreakSoundCue()
+{
+	armorBreakAudioComponent->Play();
+}
+
 void ABase_Player_Controller::Initialize()
 {
 	//Create the inventory object
 	playerInventory = NewObject<UInventory>();
 
-	if (hullDamageSound && shieldDamageSound)
+	if (hullDamageSound && shieldDamageSound && armorDamageSound && shieldBreakSound && armorBreakSound)
 	{
 		//Set audio component sounds
 		hullDamageAudioComponent->SetSound(hullDamageSound);
 		shieldDamageAudioComponent->SetSound(shieldDamageSound);
+		armorDamageAudioComponent->SetSound(armorDamageSound);
+		shieldBreakAudioComponent->SetSound(shieldBreakSound);
+		armorBreakAudioComponent->SetSound(armorBreakSound);
 	}
 	else
 	{
@@ -199,6 +236,18 @@ ABase_Player_Controller::ABase_Player_Controller()
 	shieldDamageAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("shieldAudio"));
 	shieldDamageAudioComponent->bAutoActivate = false; // Prevent it from playing on start
 	shieldDamageAudioComponent->SetupAttachment(RootComponent);
+
+	armorDamageAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("armorAudio"));
+	armorDamageAudioComponent->bAutoActivate = false; // Prevent it from playing on start
+	armorDamageAudioComponent->SetupAttachment(RootComponent);
+
+	shieldBreakAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("shieldBreakAudio"));
+	shieldBreakAudioComponent->bAutoActivate = false; // Prevent it from playing on start
+	shieldBreakAudioComponent->SetupAttachment(RootComponent);
+
+	armorBreakAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("armorBreakAudio"));
+	armorBreakAudioComponent->bAutoActivate = false; // Prevent it from playing on start
+	armorBreakAudioComponent->SetupAttachment(RootComponent);
 }
 
 void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID, bool bIsPickup)

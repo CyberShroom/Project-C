@@ -221,6 +221,11 @@ void USDIO_UIWindow_Inventory::UpdateMaxShieldValue(float newValue)
 	ShieldBar->SetRightVarValue(newValue);
 }
 
+void USDIO_UIWindow_Inventory::UpdateArmorValue(float newValue, float amountChanged)
+{
+	ArmorText->SetText(FText::FromString(FString::Printf(TEXT("%d"), FMath::RoundToInt(newValue))));
+}
+
 void USDIO_UIWindow_Inventory::NativeConstruct()
 {
 	Super::NativeConstruct();

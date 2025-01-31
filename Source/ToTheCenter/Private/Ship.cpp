@@ -16,8 +16,15 @@ AShip::AShip()
 	camera->SetupAttachment(scene);
 }
 
+//Damage order is Shield --> Armor --> Hull
 void AShip::ShipTakeDamage(float damage)
 {
+	//Dont run this if there's no damage
+	if (damage == 0)
+	{
+		return;
+	}
+
 	if (HasAuthority())
 	{
 		//If shield is active, damage the shield
@@ -27,6 +34,7 @@ void AShip::ShipTakeDamage(float damage)
 			if (currentShield - damage < 0)
 			{
 				damage = currentShield;
+				onShieldBreak.Broadcast();
 			}
 
 			//Deal damage to the shield
@@ -40,6 +48,28 @@ void AShip::ShipTakeDamage(float damage)
 			{
 				//Notify client that they took damage so client can run cosmetic changes.
 				ClientRPC_NotifyClientOfShieldChange(damage);
+			}
+		}
+		else if (armor > 0)
+		{
+			//If damage would go over armor, nullify extra damage
+			if (armor - damage < 0)
+			{
+				damage = armor;
+				onArmorBreak.Broadcast();
+			}
+
+			//Deal damage to the shield
+			armor -= damage;
+
+			//Run on shield damage items
+			onArmorDamage.Broadcast(armor, damage);
+
+			//Do not run rpc if host
+			if (GetController()->IsLocalPlayerController() == false)
+			{
+				//Notify client that they took damage so client can run cosmetic changes.
+				ClientRPC_NotifyClientOfArmorChange(true, damage);
 			}
 		}
 		else
@@ -105,6 +135,11 @@ float AShip::GetMaxShield()
 	return maxShield;
 }
 
+float AShip::GetArmor()
+{
+	return armor;
+}
+
 void AShip::OnRep_maxHull()
 {
 	onMaxHullChanged.Broadcast(maxHull);
@@ -123,14 +158,40 @@ void AShip::OnRep_maxShield()
 
 void AShip::OnRep_currentShield()
 {
-	UE_LOG(LogTemp, Error, TEXT("Current Shield Broadcasting! Shield is = %f"), currentShield);
 	//Do 0 because on damage effects will ignore 0's preferably
 	onShieldDamage.Broadcast(currentShield, 0);
 }
 
+void AShip::OnRep_armor()
+{
+	onArmorDamage.Broadcast(armor, 0);
+}
+
 void AShip::ClientRPC_NotifyClientOfShieldChange_Implementation(float amount)
 {
+	if (currentShield - amount == 0)
+	{
+		onShieldBreak.Broadcast();
+	}
+
 	onShieldDamage.Broadcast(currentShield, amount);
+}
+
+void AShip::ClientRPC_NotifyClientOfArmorChange_Implementation(bool isDamage, float amount)
+{
+	if (armor - amount == 0)
+	{
+		onArmorBreak.Broadcast();
+	}
+
+	if (isDamage)
+	{
+		onArmorDamage.Broadcast(armor, amount);
+	}
+	else
+	{
+		onGainArmor.Broadcast(armor, amount);
+	}
 }
 
 // Called when the game starts or when spawned

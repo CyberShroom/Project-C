@@ -12,6 +12,10 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullDamage, float, newCurrentHull, float, damageTaken);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullHeal, float, newCurrentHull, float, amountHealed);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FShieldDamage, float, newShield, float, damageTaken);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FShieldBreak);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FArmorDamage, float, newArmor, float, damageTaken);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FArmorGained, float, newArmor, float, armorGained);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FArmorBreak);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMaxHullChanged, float, newMaxHull);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMaxShieldChanged, float, newMaxShield);
 
@@ -32,6 +36,12 @@ private:
 	/// </summary>
 	UPROPERTY(ReplicatedUsing = OnRep_maxHull)
 	float maxHull = 90;
+
+	/// <summary>
+	/// The ships armor.
+	/// </summary>
+	UPROPERTY(ReplicatedUsing = OnRep_armor)
+	float armor = 15;
 
 	/// <summary>
 	/// The ships max shields.
@@ -86,6 +96,11 @@ private:
 	/// </summary>
 	UFUNCTION()
 	void OnRep_currentShield();
+	/// <summary>
+	/// Called when armor replicates to clients.
+	/// </summary>
+	UFUNCTION()
+	void OnRep_armor();
 
 	/// <summary>
 	/// Runs the related event on the client side for cosmetic purposes.
@@ -97,9 +112,14 @@ private:
 	/// <summary>
 	/// Runs the related event on the client side for cosmetic purposes.
 	/// </summary>
-	/// <param name="isDamage">If true, run onDamage.</param>
 	UFUNCTION(Client, Unreliable)
 	void ClientRPC_NotifyClientOfShieldChange(float amount);
+
+	/// <summary>
+	/// Runs the related event on the client side for cosmetic purposes.
+	/// </summary>
+	UFUNCTION(Client, Unreliable)
+	void ClientRPC_NotifyClientOfArmorChange(bool isDamage, float amount);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
@@ -119,12 +139,6 @@ protected:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
 	float turnSpeed = 1.0;
 
-	/// <summary>
-	/// The ships armor.
-	/// </summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships armor."))
-	float armor = 0;
-
 	/// <summary>Contains logic for how this ship should move.</summary>
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to move. joystickValue is a modifier between 0 and 1."))
 	virtual void MoveShip(float joystickValue);
@@ -141,10 +155,34 @@ public:
 	FHullDamage onHullDamage;
 
 	/// <summary>
+	/// Called when the ship takes shield damage
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ship shield takes damage."))
+	FShieldDamage onShieldDamage;
+
+	/// <summary>
+	/// Called when the ship takes armor damage
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ship armor takes damage."))
+	FArmorDamage onArmorDamage;
+
+	/// <summary>
 	/// Called when the ship takes hull heals.
 	/// </summary>
 	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ship hull heals."))
 	FHullHeal onHullHeal;
+
+	/// <summary>
+	/// Called when the ships shield becomes 0
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships shield becomes 0"))
+	FShieldBreak onShieldBreak;
+
+	/// <summary>
+	/// Called when the ships armor becomes 0
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships armor becomes 0"))
+	FArmorBreak onArmorBreak;
 
 	/// <summary>
 	/// Called when the ships max hull changes.
@@ -153,16 +191,16 @@ public:
 	FMaxHullChanged onMaxHullChanged;
 
 	/// <summary>
-	/// Called when the ship takes shield damage
-	/// </summary>
-	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ship shield takes damage."))
-	FShieldDamage onShieldDamage;
-
-	/// <summary>
 	/// Called when the ships max shield changes.
 	/// </summary>
 	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships max shield changes."))
 	FMaxShieldChanged onMaxShieldChanged;
+
+	/// <summary>
+	/// Called when the ships gains armor.
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships gains armor."))
+	FArmorGained onGainArmor;
 
 	/// <summary>An array of items used by the ship. even are projectiles and odd are weapons.</summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The hotbar inventory. 0-3 are projectiles and 4-7 are weapons."))
@@ -196,6 +234,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Ship")
 	float GetMaxShield();
+
+	UFUNCTION(BlueprintCallable, Category = "Ship")
+	float GetArmor();
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

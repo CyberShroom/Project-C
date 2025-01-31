@@ -84,6 +84,9 @@ protected:
 	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
 	UDynamicBar* ShieldBar;
 
+	UPROPERTY(BlueprintReadOnly, Category = "HierarchyReference", meta = (bindWidget))
+	UTextBlock* ArmorText;
+
 	/// <summary>
 	/// A list of the inventory slots in the hotbar
 	/// </summary>
@@ -176,6 +179,12 @@ public:
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the max shield value in the health bar. This is purely cosmetic."))
 	void UpdateMaxShieldValue(float newValue);
+
+	/// <summary>
+	/// Changes the armor value in the health bar. This is purely cosmetic.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the armor value in the health bar. This is purely cosmetic."))
+	void UpdateArmorValue(float newValue, float amountChanged);
 
 	virtual void NativeConstruct() override;
 };

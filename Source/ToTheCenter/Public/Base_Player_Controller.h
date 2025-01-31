@@ -32,6 +32,15 @@ private:
 	UPROPERTY()
 	UAudioComponent* shieldDamageAudioComponent;
 
+	UPROPERTY()
+	UAudioComponent* armorDamageAudioComponent;
+
+	UPROPERTY()
+	UAudioComponent* shieldBreakAudioComponent;
+
+	UPROPERTY()
+	UAudioComponent* armorBreakAudioComponent;
+
 	/// <summary>
 	/// Attempts to run the initializer for the UI Inventory.
 	/// </summary>
@@ -65,6 +74,24 @@ private:
 	UFUNCTION()
 	void PlayShieldDamageSoundCue(float currentShield, float damage);
 
+	/// <summary>
+	/// Plays the damage sound cue when the armor takes damage
+	/// </summary>
+	UFUNCTION()
+	void PlayArmorDamageSoundCue(float currentArmor, float damage);
+
+	/// <summary>
+	/// Plays the break sound cue when the shield breaks
+	/// </summary>
+	UFUNCTION()
+	void PlayShieldBreakSoundCue();
+
+	/// <summary>
+	/// Plays the break sound cue when the armor breaks
+	/// </summary>
+	UFUNCTION()
+	void PlayArmorBreakSoundCue();
+
 protected:
 	/// <summary>
 	/// Mouse slot for the inventory.
@@ -87,6 +114,24 @@ protected:
 	/// </summary>
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Sound that plays when the connected pawn takes damage."))
 	USoundCue* shieldDamageSound;
+
+	/// <summary>
+	/// Sound that plays when the connected pawn takes damage.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Sound that plays when the connected pawn takes damage."))
+	USoundCue* armorDamageSound;
+
+	/// <summary>
+	/// Sound that plays when the connected pawns shield breaks.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Sound that plays when the connected pawns shield breaks."))
+	USoundCue* shieldBreakSound;
+
+	/// <summary>
+	/// Sound that plays when the connected pawns armor breaks.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Sound that plays when the connected pawns armor breaks."))
+	USoundCue* armorBreakSound;
 
 	/// <summary>Initializes the player controller.</summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC | Initializers", meta = (Tooltip = "Initializes the base player controller. This must be ran in BeginPlay BP!"))
