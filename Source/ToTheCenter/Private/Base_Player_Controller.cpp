@@ -152,7 +152,7 @@ void ABase_Player_Controller::PlayHullDamageSoundCue(float currentHull, float da
 
 void ABase_Player_Controller::PlayShieldDamageSoundCue(float currentShield, float damage)
 {
-	if (damage <= 0)
+	if (damage <= 0 || currentShield - damage <= 0)
 	{
 		return;
 	}
@@ -162,7 +162,7 @@ void ABase_Player_Controller::PlayShieldDamageSoundCue(float currentShield, floa
 
 void ABase_Player_Controller::PlayArmorDamageSoundCue(float currentArmor, float damage)
 {
-	if (damage <= 0)
+	if (damage <= 0 || currentArmor - damage <= 0)
 	{
 		return;
 	}
@@ -214,6 +214,12 @@ void ABase_Player_Controller::Initialize()
 	//Initialize the inventory and ui inventory
 	playerInventory->Initialize(24, 8, EInventoryID::Main_Inventory);
 	InitializeUIInventory();
+}
+
+void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(float joystickValue, FVector predictedLocation)
+{
+	playerShip->MoveShip_Target(joystickValue);
+	playerShip->ClientRPC_CheckForError(playerShip->GetMovementTargetLocation(), predictedLocation);
 }
 
 void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bool bIsPickup)

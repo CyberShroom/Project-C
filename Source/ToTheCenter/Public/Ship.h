@@ -7,6 +7,7 @@
 #include "SDIO_Item.h"
 #include "Camera/CameraComponent.h"
 #include "Inventory.h"
+#include "Components/InterpToMovementComponent.h"
 #include "Ship.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullDamage, float, newCurrentHull, float, damageTaken);
@@ -74,6 +75,30 @@ private:
 	float outOfCombatTimer = 0;
 
 	/// <summary>
+	/// The last target location set by the server.
+	/// </summary>
+	UPROPERTY(ReplicatedUsing = OnRep_targetLocation)
+	FVector targetLocation;
+
+	/// <summary>
+	/// The last predicted location of movement
+	/// </summary>
+	UPROPERTY()
+	FVector lastPredictedLocation;
+
+	/// <summary>
+	/// Offset vector to add to the next predicted location to move the client in line with the server
+	/// </summary>
+	UPROPERTY()
+	FVector offset = FVector(0, 0, 0);
+
+	/// <summary>
+	/// How many movement checks to wait for before checking for desync again.
+	/// </summary>
+	UPROPERTY()
+	int errorCheckWait = 0;
+
+	/// <summary>
 	/// Called when max hull replicates to clients.
 	/// </summary>
 	UFUNCTION()
@@ -96,11 +121,18 @@ private:
 	/// </summary>
 	UFUNCTION()
 	void OnRep_currentShield();
+
 	/// <summary>
 	/// Called when armor replicates to clients.
 	/// </summary>
 	UFUNCTION()
 	void OnRep_armor();
+
+	/// <summary>
+	/// Called when target location replicates to clients
+	/// </summary>
+	UFUNCTION()
+	void OnRep_targetLocation();
 
 	/// <summary>
 	/// Runs the related event on the client side for cosmetic purposes.
@@ -128,6 +160,12 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UCameraComponent* camera;
 
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
+	UInterpToMovementComponent* movementComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
+	UStaticMeshComponent* shipMesh;
+
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
@@ -139,13 +177,18 @@ protected:
 	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
 	float turnSpeed = 1.0;
 
-	/// <summary>Contains logic for how this ship should move.</summary>
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to move. joystickValue is a modifier between 0 and 1."))
-	virtual void MoveShip(float joystickValue);
+	/// <summary>
+	/// Determines if the client is allowed to send movement commands to the server.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Determines if the client is allowed to send movement commands to the server."))
+	bool bAwaitingServerMovementTick = false;
 
 	/// <summary>Contains logic for how this ship should turn.</summary>
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
 	virtual void TurnShip(float joystickValue);
+
+	UFUNCTION(BlueprintPure, Category = "Ship")
+	FVector GetLastPredictedLocation();
 
 public:	
 	/// <summary>
@@ -229,14 +272,34 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Heals the ships hull."))
 	void HealHull(float heal);
 
-	UFUNCTION(BlueprintCallable, Category = "Ship")
+	UFUNCTION(BlueprintPure, Category = "Ship")
 	float GetMaxHull();
 
-	UFUNCTION(BlueprintCallable, Category = "Ship")
+	UFUNCTION(BlueprintPure, Category = "Ship")
 	float GetMaxShield();
 
-	UFUNCTION(BlueprintCallable, Category = "Ship")
+	UFUNCTION(BlueprintPure, Category = "Ship")
 	float GetArmor();
+
+	UFUNCTION(BlueprintPure, Category = "Ship")
+	FVector GetMovementTargetLocation();
+
+	/// <summary>Moves the ship forward based on its actor location.</summary>
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship forward based on its actor location. joystickValue is a modifier between 0 and 1."))
+	bool MoveShip_Actor(float joystickValue);
+
+	/// <summary>
+	/// Moves the ship forward based on its target location.
+	/// </summary>
+	/// <param name="joystickValue">modifier between 0 and 1</param>
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship forward based on its target location."))
+	bool MoveShip_Target(float joystickValue);
+
+	/// <summary>
+	/// Checks for error between the 2 given points and sets an offset to fix it.
+	/// </summary>
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "Ship", meta = (Tooltip = "Checks for error between the 2 given points and sets an offset to fix it."))
+	void ClientRPC_CheckForError(FVector trueLocation, FVector predictedLocation);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

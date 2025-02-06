@@ -14,6 +14,11 @@ AShip::AShip()
 
 	camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	camera->SetupAttachment(scene);
+
+	shipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShipMesh"));
+	shipMesh->SetupAttachment(scene);
+
+	movementComponent = CreateDefaultSubobject<UInterpToMovementComponent>(TEXT("MovementComponent"));
 }
 
 //Damage order is Shield --> Armor --> Hull
@@ -140,6 +145,11 @@ float AShip::GetArmor()
 	return armor;
 }
 
+FVector AShip::GetMovementTargetLocation()
+{
+	return targetLocation;
+}
+
 void AShip::OnRep_maxHull()
 {
 	onMaxHullChanged.Broadcast(maxHull);
@@ -165,6 +175,20 @@ void AShip::OnRep_currentShield()
 void AShip::OnRep_armor()
 {
 	onArmorDamage.Broadcast(armor, 0);
+}
+
+void AShip::OnRep_targetLocation()
+{
+	//If this pawn has no controller (No Player nor AI), set it to move to the target location
+	if (!GetController())
+	{
+		movementComponent->StopMovementImmediately();
+		movementComponent->ResetControlPoints();
+		movementComponent->AddControlPointPosition(FVector(0, 0, 0), true);
+		movementComponent->AddControlPointPosition(targetLocation, false);
+		movementComponent->FinaliseControlPoints();
+		movementComponent->RestartMovement();
+	}
 }
 
 void AShip::ClientRPC_NotifyClientOfShieldChange_Implementation(float amount)
@@ -198,20 +222,59 @@ void AShip::ClientRPC_NotifyClientOfArmorChange_Implementation(bool isDamage, fl
 void AShip::BeginPlay()
 {
 	Super::BeginPlay();
-	
+
+	targetLocation = GetActorLocation();
+
 	shipInventory = NewObject<UInventory>();
-	shipInventory->Initialize(8,currentHotbarSize * 2, EInventoryID::Hotbar_Inventory);
+	shipInventory->Initialize(8, currentHotbarSize * 2, EInventoryID::Hotbar_Inventory);
 }
 
-void AShip::MoveShip(float joystickValue)
+bool AShip::MoveShip_Actor(float joystickValue)
 {
-	AddActorLocalOffset(FVector(moveSpeed * 200 * joystickValue, 0.0, 0.0));
+	if (GetActorLocation() != movementComponent->ControlPoints[1].PositionControlPoint)
+	{
+		return false;
+	}
+
+	//The location to stop interpolating
+	FVector finalLocation;
+
+	//Get the location the ship will end at
+	UE_LOG(LogTemp, Warning, TEXT("Once Dev Ship is replaced, please edit MoveShip in the AShip class to not have a modified rotation. Make sure to import new ships with the correct rotation!"));
+	finalLocation = GetActorLocation() + (FVector(shipMesh->GetForwardVector().Y, shipMesh->GetForwardVector().X * -1, shipMesh->GetForwardVector().Z) * (moveSpeed * 20000 * joystickValue));
+	finalLocation += offset;
+	offset = FVector(0, 0, 0);
+
+	//Set the interpolation values
+	movementComponent->StopMovementImmediately();
+	movementComponent->ResetControlPoints();
+	movementComponent->AddControlPointPosition(FVector(0,0,0), true);
+	movementComponent->AddControlPointPosition(finalLocation, false);
+	movementComponent->FinaliseControlPoints();
+	movementComponent->RestartMovement();
+
+	//AddActorLocalOffset(FVector(moveSpeed * 200 * joystickValue, 0.0, 0.0));
+
+	if (HasAuthority())
+	{
+		targetLocation = finalLocation;
+	}
+	else
+	{
+		lastPredictedLocation = finalLocation;
+	}
+
+	return true;
 }
 
 void AShip::TurnShip(float joystickValue)
 {
-	AddActorLocalRotation(FRotator(0.0, turnSpeed * 75 * joystickValue, 0.0));
-	camera->AddRelativeRotation(FRotator(0.0, turnSpeed * 75 * joystickValue * -1, 0.0));
+	shipMesh->AddLocalRotation(FRotator(0.0, turnSpeed * 75 * joystickValue, 0.0));
+}
+
+FVector AShip::GetLastPredictedLocation()
+{
+	return lastPredictedLocation;
 }
 
 void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, float amount)
@@ -223,6 +286,56 @@ void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, flo
 	else
 	{
 		onHullHeal.Broadcast(currentHull, amount);
+	}
+}
+
+bool AShip::MoveShip_Target(float joystickValue)
+{
+	//The location to stop interpolating
+	FVector finalLocation;
+
+	//Get the location the ship will end at
+	finalLocation = targetLocation + (FVector(shipMesh->GetForwardVector().Y, shipMesh->GetForwardVector().X * -1, shipMesh->GetForwardVector().Z) * (moveSpeed * 20000 * joystickValue));
+	finalLocation += offset;
+	offset = FVector(0, 0, 0);
+
+	//Set the interpolation values
+	movementComponent->StopMovementImmediately();
+	movementComponent->ResetControlPoints();
+	movementComponent->AddControlPointPosition(FVector(0, 0, 0), true);
+	movementComponent->AddControlPointPosition(finalLocation, false);
+	movementComponent->FinaliseControlPoints();
+	movementComponent->RestartMovement();
+
+	if (HasAuthority())
+	{
+		targetLocation = finalLocation;
+	}
+	else
+	{
+		lastPredictedLocation = finalLocation;
+	}
+
+	return true;
+}
+
+void AShip::ClientRPC_CheckForError_Implementation(FVector trueLocation, FVector predictedLocation)
+{
+	if (errorCheckWait > 0)
+	{
+		errorCheckWait--;
+		return;
+	}
+	UE_LOG(LogTemp, Warning, TEXT("========================="));
+	UE_LOG(LogTemp, Warning, TEXT("True Location is %f, %f, %f"), trueLocation.X, trueLocation.Y, trueLocation.Z);
+	UE_LOG(LogTemp, Warning, TEXT("Predicted Location is %f, %f, %f"), predictedLocation.X, predictedLocation.Y, predictedLocation.Z);
+	UE_LOG(LogTemp, Warning, TEXT("Distance is %f"), FVector::Dist(trueLocation, predictedLocation));
+	if (FVector::Dist(trueLocation, predictedLocation) > 1)
+	{
+		offset = trueLocation - predictedLocation;
+		UE_LOG(LogTemp, Warning, TEXT("Offset is %f, %f, %f"), offset.X, offset.Y, offset.Z);
+		errorCheckWait = 1 / movementComponent->Duration;
+		UE_LOG(LogTemp, Warning, TEXT("Error Check Set To %d"), errorCheckWait);
 	}
 }
 

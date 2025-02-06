@@ -137,6 +137,9 @@ protected:
 	UFUNCTION(BlueprintCallable, Category = "TTC | Initializers", meta = (Tooltip = "Initializes the base player controller. This must be ran in BeginPlay BP!"))
 	void Initialize();
 
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Starts vertical movement on the server."))
+	void ServerRPC_InputVertical(float joystickValue, FVector predictedLocation);
+
 public:
 	/// <summary>
 	/// The players logical inventory
