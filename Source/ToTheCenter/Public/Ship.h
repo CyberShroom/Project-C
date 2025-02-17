@@ -81,22 +81,52 @@ private:
 	FVector targetLocation;
 
 	/// <summary>
-	/// The last predicted location of movement
+	/// The last target rotation set by the server.
+	/// </summary>
+	UPROPERTY(ReplicatedUsing = OnRep_targetRotation)
+	FRotator targetRotation;
+
+	/// <summary>
+	/// The last target rotation set by the server.
 	/// </summary>
 	UPROPERTY()
-	FVector lastPredictedLocation;
+	FRotator lastPredictedRotation;
+
+	/// <summary>
+	/// The interpolation speed needed to rotate at a 0.2 second duration
+	/// </summary>
+	UPROPERTY()
+	float rotationSpeed;
 
 	/// <summary>
 	/// Offset vector to add to the next predicted location to move the client in line with the server
 	/// </summary>
 	UPROPERTY()
-	FVector offset = FVector(0, 0, 0);
+	FVector locationOffset = FVector(0, 0, 0);
+
+	/// <summary>
+	/// Offset rotator to add to the next predicted rotation to move the client in line with the server
+	/// </summary>
+	UPROPERTY()
+	FRotator rotationOffset = FRotator(0, 0, 0);
 
 	/// <summary>
 	/// How many movement checks to wait for before checking for desync again.
 	/// </summary>
 	UPROPERTY()
-	int errorCheckWait = 0;
+	int locationErrorCheckWait = 0;
+
+	/// <summary>
+	/// How many rotation checks to wait for before checking for desync again.
+	/// </summary>
+	UPROPERTY()
+	int rotationErrorCheckWait = 0;
+
+	/// <summary>
+	/// Flag that immediatly stops the objects rotation
+	/// </summary>
+	UPROPERTY()
+	bool bStopRotation = false;
 
 	/// <summary>
 	/// Called when max hull replicates to clients.
@@ -135,6 +165,12 @@ private:
 	void OnRep_targetLocation();
 
 	/// <summary>
+	/// Called when target rotation replicates to clients
+	/// </summary>
+	UFUNCTION()
+	void OnRep_targetRotation();
+
+	/// <summary>
 	/// Runs the related event on the client side for cosmetic purposes.
 	/// </summary>
 	/// <param name="isDamage">If true, run onDamage. If false, Run onHeal.</param>
@@ -152,6 +188,12 @@ private:
 	/// </summary>
 	UFUNCTION(Client, Unreliable)
 	void ClientRPC_NotifyClientOfArmorChange(bool isDamage, float amount);
+
+	/// <summary>
+	/// 
+	/// </summary>
+	UFUNCTION()
+	void Rotate(FRotator newRotation, float elapsedTime);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
@@ -178,17 +220,10 @@ protected:
 	float turnSpeed = 1.0;
 
 	/// <summary>
-	/// Determines if the client is allowed to send movement commands to the server.
+	/// Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s
 	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "Determines if the client is allowed to send movement commands to the server."))
-	bool bAwaitingServerMovementTick = false;
-
-	/// <summary>Contains logic for how this ship should turn.</summary>
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
-	virtual void TurnShip(float joystickValue);
-
-	UFUNCTION(BlueprintPure, Category = "Ship")
-	FVector GetLastPredictedLocation();
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s"))
+	float movementDuration = 0.2;
 
 public:	
 	/// <summary>
@@ -284,22 +319,44 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Ship")
 	FVector GetMovementTargetLocation();
 
-	/// <summary>Moves the ship forward based on its actor location.</summary>
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship forward based on its actor location. joystickValue is a modifier between 0 and 1."))
-	bool MoveShip_Actor(float joystickValue);
+	UFUNCTION(BlueprintPure, Category = "Ship")
+	FRotator GetTargetRotation();
+
+	UFUNCTION(BlueprintPure, Category = "Ship")
+	float GetMovementDuration();
 
 	/// <summary>
-	/// Moves the ship forward based on its target location.
+	/// Moves the ship.
 	/// </summary>
-	/// <param name="joystickValue">modifier between 0 and 1</param>
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship forward based on its target location."))
-	bool MoveShip_Target(float joystickValue);
+	/// <param name="joystickValue">Input value</param>
+	/// <param name="useTarget">Whether to use targetLocation or Actor Location.</param>
+	/// <param name="forwardVector">If given a value, moves the ship using the value as the forward vector.</param>
+	/// <param name="predictedLocation">location the client predicted</param>
+	/// <returns></returns>
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship."))
+	bool MoveShip(float joystickValue, bool useTarget, FVector forwardVector, FVector& predictedLocation);
+
+	/// <summary>Contains logic for how this ship should turn.</summary>
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
+	bool TurnShip(float joystickValue, bool useTarget, FRotator& predictedRotation);
+
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ship."))
+	void StopShip(FVector& predictedLocation);
+
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ships rotation."))
+	void StopShipRotation(FRotator& predictedRotation);
 
 	/// <summary>
 	/// Checks for error between the 2 given points and sets an offset to fix it.
 	/// </summary>
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "Ship", meta = (Tooltip = "Checks for error between the 2 given points and sets an offset to fix it."))
-	void ClientRPC_CheckForError(FVector trueLocation, FVector predictedLocation);
+	void ClientRPC_CheckForLocationError(FVector trueLocation, FVector predictedLocation);
+
+	/// <summary>
+	/// Checks for error between the 2 given rotations and sets an offset to fix it.
+	/// </summary>
+	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "Ship", meta = (Tooltip = "Checks for error between the 2 given rotations and sets an offset to fix it."))
+	void ClientRPC_CheckForRotationError(FRotator trueRotation, FRotator predictedRotation);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

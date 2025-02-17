@@ -35,6 +35,20 @@ void ABase_Player_Controller::InitializeUIInventory()
 	GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABase_Player_Controller::InitializeUIInventory);
 }
 
+void ABase_Player_Controller::InitializePawn()
+{
+	if (GetPawn())
+	{
+		GetPawn()->SetActorLocation(FVector(0.0, 0.0, 0.0));
+		playerShip = Cast<AShip>(GetPawn());
+	}
+
+	if (!IsValid(playerShip))
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABase_Player_Controller::InitializePawn);
+	}
+}
+
 void ABase_Player_Controller::DelegateInventoryInteractionHandler(FGuid itemID, EInventoryID targetID, EInventoryID originID)
 {
 	//If either inventory IDs are invalid, do not run this.
@@ -201,25 +215,61 @@ void ABase_Player_Controller::Initialize()
 	
 
 	//Set the player ship location
-	if (GetPawn())
-	{
-		GetPawn()->SetActorLocation(FVector(0.0, 0.0, 0.0));
-		playerShip = Cast<AShip>(GetPawn());
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Failed to find a UShip that belongs to this player controller."));
-	}
+	InitializePawn();
 
 	//Initialize the inventory and ui inventory
 	playerInventory->Initialize(24, 8, EInventoryID::Main_Inventory);
 	InitializeUIInventory();
 }
 
-void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(float joystickValue, FVector predictedLocation)
+void ABase_Player_Controller::ServerRPC_InputTurnStop_Implementation(FRotator predictedRotation)
 {
-	playerShip->MoveShip_Target(joystickValue);
-	playerShip->ClientRPC_CheckForError(playerShip->GetMovementTargetLocation(), predictedLocation);
+	if (IsLocalController())
+	{
+		return;
+	}
+
+	playerShip->StopShipRotation(predictedRotation);
+}
+
+void ABase_Player_Controller::ServerRPC_InputMovementStop_Implementation(FVector predictedLocation)
+{
+	if (IsLocalController())
+	{
+		return;
+	}
+
+	//Prevents clients from exploiting movement
+	movementTally++;
+	UE_LOG(LogTemp, Error, TEXT("Tally is: %d"), movementTally);
+
+	playerShip->StopShip(predictedLocation);
+}
+
+void ABase_Player_Controller::ServerRPC_InputTurn_Implementation(float joystickValue, FRotator predictedRotation)
+{
+	if (IsLocalController())
+	{
+		return;
+	}
+
+	playerShip->TurnShip(joystickValue, true, predictedRotation);
+	playerShip->ClientRPC_CheckForRotationError(playerShip->GetTargetRotation(), predictedRotation);
+}
+
+void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(float joystickValue, FVector predictedLocation, FVector clientForwardVector)
+{
+	if (IsLocalController() || movementTally > (1 / playerShip->GetMovementDuration()) * 2)
+	{
+		return;
+	}
+
+	//Prevents clients from exploiting movement
+	movementTally++;
+	UE_LOG(LogTemp, Error, TEXT("Tally is: %d"), movementTally);
+
+	playerShip->MoveShip(joystickValue, true, clientForwardVector, predictedLocation);
+	playerShip->ClientRPC_CheckForLocationError(playerShip->GetMovementTargetLocation(), predictedLocation);
 }
 
 void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bool bIsPickup)
@@ -229,6 +279,19 @@ void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bo
 	if (!IsLocalPlayerController() && bIsPickup)
 	{
 		ClientRPC_AddItemToInventory(newItem->instanceID, bIsPickup);
+	}
+}
+
+void ABase_Player_Controller::Tick(float DeltaTime)
+{
+	Super::Tick(DeltaTime);
+
+	tallyTimer += DeltaTime;
+
+	if (tallyTimer >= 1)
+	{
+		movementTally = 0;
+		tallyTimer = 0;
 	}
 }
 

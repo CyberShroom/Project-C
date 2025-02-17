@@ -42,10 +42,28 @@ private:
 	UAudioComponent* armorBreakAudioComponent;
 
 	/// <summary>
+	/// Tracks how many movement commands have been processed per second
+	/// </summary>
+	UPROPERTY()
+	uint8 movementTally = 0;
+
+	/// <summary>
+	/// Timer that tracks when Tally should be reset
+	/// </summary>
+	UPROPERTY()
+	float tallyTimer = 0;
+
+	/// <summary>
 	/// Attempts to run the initializer for the UI Inventory.
 	/// </summary>
 	UFUNCTION()
 	void InitializeUIInventory();
+
+	/// <summary>
+	/// Attempts to set playerShip to the pawn.
+	/// </summary>
+	UFUNCTION()
+	void InitializePawn();
 
 	/// <summary>
 	/// Handles the inventory interaction event
@@ -138,7 +156,16 @@ protected:
 	void Initialize();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Starts vertical movement on the server."))
-	void ServerRPC_InputVertical(float joystickValue, FVector predictedLocation);
+	void ServerRPC_InputVertical(float joystickValue, FVector predictedLocation, FVector clientForwardVector);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Stops the ship on the server."))
+	void ServerRPC_InputMovementStop(FVector predictedLocation);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Starts turning on the server."))
+	void ServerRPC_InputTurn(float joystickValue, FRotator predictedRotation);
+
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Stops the ships rotation on the server."))
+	void ServerRPC_InputTurnStop(FRotator predictedRotation);
 
 public:
 	/// <summary>
@@ -167,6 +194,8 @@ public:
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TSubclassOf<UTTC_Item> itemRef;
+
+	virtual void Tick(float DeltaTime) override;
 
 	ABase_Player_Controller();
 };
