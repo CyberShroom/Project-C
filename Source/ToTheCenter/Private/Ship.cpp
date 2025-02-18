@@ -14,11 +14,20 @@ AShip::AShip()
 
 	camera = CreateDefaultSubobject<UCameraComponent>(TEXT("Camera"));
 	camera->SetupAttachment(scene);
+	camera->bAutoActivate = false;
 
 	shipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShipMesh"));
 	shipMesh->SetupAttachment(scene);
 
 	movementComponent = CreateDefaultSubobject<UInterpToMovementComponent>(TEXT("MovementComponent"));
+	movementComponent->Duration = 0.2;
+	movementComponent->TeleportType = ETeleportType::ResetPhysics;
+	movementComponent->bConstrainToPlane = true;
+	movementComponent->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Z);
+
+	movementComponent->AddControlPointPosition(FVector::ZeroVector, true);
+	movementComponent->AddControlPointPosition(FVector::ZeroVector, true);
+	movementComponent->FinaliseControlPoints();
 }
 
 //Damage order is Shield --> Armor --> Hull
@@ -295,7 +304,7 @@ bool AShip::MoveShip(float joystickValue, bool useTarget, FVector forwardVector,
 	//If forwardVector has a value, use it as the forward vector, otherwise, grab the objects forward vector
 	if (forwardVector.ContainsNaN() || forwardVector.IsZero())
 	{
-		finalForwardVector = FVector(shipMesh->GetForwardVector().Y, shipMesh->GetForwardVector().X * -1, shipMesh->GetForwardVector().Z) * (moveSpeed * 100 * joystickValue);
+		finalForwardVector = GetCorrectedForwardVector() * (moveSpeed * 100 * joystickValue);
 	}
 	else
 	{
@@ -303,7 +312,6 @@ bool AShip::MoveShip(float joystickValue, bool useTarget, FVector forwardVector,
 	}
 
 	//Get the location the ship will end at
-	UE_LOG(LogTemp, Warning, TEXT("Once Dev Ship is replaced, please edit MoveShip in the AShip class to not have a modified rotation. Make sure to import new ships with the correct rotation!"));
 	if (useTarget)
 	{
 		finalLocation = targetLocation + finalForwardVector;
@@ -476,6 +484,11 @@ void AShip::StopShipRotation(FRotator& predictedRotation)
 		predictedRotation = shipMesh->GetRelativeRotation();
 	}
 	lastPredictedRotation = shipMesh->GetRelativeRotation();
+}
+
+FVector AShip::GetCorrectedForwardVector()
+{
+	return FVector(shipMesh->GetForwardVector().Y, shipMesh->GetForwardVector().X * -1, shipMesh->GetForwardVector().Z);
 }
 
 void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, float amount)

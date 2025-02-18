@@ -346,6 +346,9 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ships rotation."))
 	void StopShipRotation(FRotator& predictedRotation);
 
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Returns the ships corrected forward vector."))
+	FVector GetCorrectedForwardVector();
+
 	/// <summary>
 	/// Checks for error between the 2 given points and sets an offset to fix it.
 	/// </summary>
