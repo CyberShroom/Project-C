@@ -10,9 +10,6 @@ void USDIO_UIManager_Game::NativeConstruct()
 	//Checks if objects are loaded
 	if (Inventory_Window && Options_Window)
 	{
-		UIList.Add(Inventory_Window);
-		UIList.Add(Cast<UUI_Window>(Options_Window));
-
-		InitializeManager(Options_Window);
+		InitializeManager({ Inventory_Window, Options_Window });
 	}
 }

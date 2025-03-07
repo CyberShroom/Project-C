@@ -18,4 +18,7 @@ protected:
 	////Object References////
 	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
 	class USDIO_UI_TextButton* Ready;
+
+public:
+	virtual void InitializeWindow() override;
 };

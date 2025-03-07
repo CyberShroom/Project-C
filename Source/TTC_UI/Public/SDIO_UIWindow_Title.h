@@ -10,15 +10,13 @@
 /**
  * 
  */
-UCLASS(meta = (ShortToolTip = "The Title Window Base Class."))
+UCLASS(meta = (ShortToolTip = "C Class. The Title Window Base Class."))
 class TTC_UI_API USDIO_UIWindow_Title : public UUI_Window
 {
 	GENERATED_BODY()
 
 private:
 	////Event Delegates For Text_Buttons////
-	//UFUNCTION()
-	//void StartSingleplayer();
 
 	/// <summary>
 	/// Broadcasts Multiplayer button event
@@ -31,9 +29,6 @@ private:
 	/// </summary>
 	UFUNCTION()
 	void DelegateOpenOptions();
-
-	//UFUNCTION()
-	//void ExitGame();
 
 protected:
 	////Object References////
@@ -50,5 +45,6 @@ protected:
 	class USDIO_UI_TextButton* Quit;
 
 public:
+	virtual void InitializeWindow() override;
 	virtual void NativeConstruct() override;
 };

@@ -10,9 +10,6 @@ void USDIO_UIManager_Lobby::NativeConstruct()
 	//Checks if objects are loaded
 	if (Lobby_Window && Options_Window)
 	{
-		UIList.Add(Lobby_Window);
-		UIList.Add(Cast<UUI_Window>(Options_Window));
-
-		InitializeManager(Options_Window);
+		InitializeManager({ Lobby_Window, Options_Window });
 	}
 }

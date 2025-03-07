@@ -3,13 +3,6 @@
 
 #include "SDIO_UIWindow_Title.h"
 
-/*
-void USDIO_UIWindow_Title::StartSingleplayer()
-{
-	UE_LOG(LogTemp, Log, TEXT("REMINDER: Multiplayer is currently handled by BP."));
-}
-*/
-
 void USDIO_UIWindow_Title::DelegateOpenMultiplayer()
 {
 	OnSetCurrentUI.Broadcast(EUIID::MultiplayerUI);
@@ -20,23 +13,20 @@ void USDIO_UIWindow_Title::DelegateOpenOptions()
 	OnSetCurrentUI.Broadcast(EUIID::OptionsUI);
 }
 
-/*
-void USDIO_UIWindow_Title::ExitGame()
+void USDIO_UIWindow_Title::InitializeWindow()
 {
-	UE_LOG(LogTemp, Log, TEXT("REMINDER: Quitting is currently handled by BP."));
+	UIID = EUIID::TitleUI;
+	bAllowSubMenus = false;
 }
-*/
 
 void USDIO_UIWindow_Title::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	//Checks that the buttons are loaded
-	if (Singleplayer && Multiplayer && Options && Quit)
+	if (Multiplayer && Options)
 	{
-		//Singleplayer->OnButtonClicked.AddUniqueDynamic(this, &USDIO_UIWindow_Title::StartSingleplayer);
 		Multiplayer->OnButtonClicked.AddUniqueDynamic(this, &USDIO_UIWindow_Title::DelegateOpenMultiplayer);
 		Options->OnButtonClicked.AddUniqueDynamic(this, &USDIO_UIWindow_Title::DelegateOpenOptions);
-		//Quit->OnButtonClicked.AddUniqueDynamic(this, &USDIO_UIWindow_Title::ExitGame);
 	}
 }

@@ -20,7 +20,7 @@ protected:
 	class UUI_Window* Lobby_Window;
 
 	UPROPERTY(BlueprintReadWrite, Category = "Hierarchy References", meta = (BindWidget))
-	class UUI_Window_BaseOptions* Options_Window;
+	class UUI_Window* Options_Window;
 
 public:
 	virtual void NativeConstruct() override;

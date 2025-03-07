@@ -3,7 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI_Window_BaseOptions.h"
+#include "UI_Window.h"
 #include "SDIO_UI_TextButton.h"
 #include "Components/Slider.h"
 #include "SDIO_UIWindow_Options.generated.h"
@@ -12,7 +12,7 @@
  * 
  */
 UCLASS(meta = (ShortToolTip = "Options window base class."))
-class TTC_UI_API USDIO_UIWindow_Options : public UUI_Window_BaseOptions
+class TTC_UI_API USDIO_UIWindow_Options : public UUI_Window
 {
 	GENERATED_BODY()
 
@@ -65,6 +65,7 @@ protected:
 	class UWidget* ControlsPanel;
 
 public:
+	virtual void InitializeWindow() override;
 	virtual void NativeConstruct() override;
 	virtual void NavigateWindow() override;
 };

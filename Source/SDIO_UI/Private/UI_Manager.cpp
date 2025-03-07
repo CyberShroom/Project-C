@@ -2,25 +2,24 @@
 
 
 #include "UI_Manager.h"
-#include "UI_Window.h"
 
 
 void UUI_Manager::SetCurrentUIFromUIID(EUIID UIID)
 {
+	//Placeholder window
 	UUI_Window* window;
 
 	//Checks if the UIID exists and sets it to window. Then sets currentUI to window.
 	if (GetUIFromUIID(UIID, window))
 	{
-		UWidget* windowWidget = window;
-		UWidget* currentWidget = currentUI;
+		currentUI->SetVisibility(ESlateVisibility::Hidden);
+		window->SetVisibility(ESlateVisibility::Visible);
 
-		SwapUIFocus(currentWidget, windowWidget);
 		currentUI = window;
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("The UI_Manager could not find a UI_Window with the UIID: %s. Returned %s to prevent crashing."), *UEnum::GetValueAsString(UIID), *UEnum::GetValueAsString(currentUI->UIID));
+		UE_LOG(LogTemp, Warning, TEXT("The UI_Manager could not find a UI_Window with the UIID: %s."), *UEnum::GetValueAsString(UIID));
 	}
 }
 
@@ -30,7 +29,7 @@ bool UUI_Manager::GetUIFromUIID(EUIID UIID, UUI_Window*& window)
 	for(UUI_Window*& item : UIList)
 	{
 		//If the UIID matches the given UIID, return it
-		if (item->UIID == UIID)
+		if (item->GetUIID() == UIID)
 		{
 			window = item;
 			return true;
@@ -44,47 +43,34 @@ bool UUI_Manager::GetUIFromUIID(EUIID UIID, UUI_Window*& window)
 bool UUI_Manager::NavigateWindows()
 {
 	//Checks if the UI_Window is allowed to override Navigation
-	if (currentUI->bOverrideNav)
+	if (currentUI->GetAllowSubMenus())
 	{
 		currentUI->NavigateWindow();
 	}
 	else
 	{
 		//If the currentUI is the same as the defaultUI, return false. Otherwise, set the currentUI to the defaultUI.
-		if (currentUI->UIID == defaultUI)
+		if (currentUI->GetUIID() == defaultUI)
 		{
 			return false;
 		}
 		else
 		{
-			SetCurrentUIFromUIID(defaultUI);
+			SetCurrentUIToDefault();
 		}
 	}
 
 	return true;
 }
 
-void UUI_Manager::InitializeManager(UUI_Window_BaseOptions*& optionsUI)
+void UUI_Manager::InitializeManager(TArray<UUI_Window*> newUIs)
 {
+	//Load the UI Windows into the list
+	InitializeUIsToList(newUIs);
+	
+	//Placeholder for the default ui
 	UUI_Window* defaultWindow;
 
-	//If optionsUI is loaded, set its defaultUI reference
-	if (IsValid(optionsUI))
-	{
-		optionsUI->defaultUI = defaultUI;
-	}
-	else
-	{
-		UE_LOG(LogTemp, Warning, TEXT("The UI_Manager could not find the options UI."));
-	}
-
-	//For each UI_Window controlled by this UI_Manager, subscribe to their events
-	for (UUI_Window* item : UIList)
-	{
-		item->OnSetCurrentUI.AddUniqueDynamic(this, &UUI_Manager::SetCurrentUIFromUIID);
-		item->OnSetCurrentUIToDefault.AddUniqueDynamic(this, &UUI_Manager::SetCurrentUIToDefault);
-	}
-	
 	//Checks if the defaultUI is set and loaded. If not, the game will create an error.
 	if (GetUIFromUIID(defaultUI, defaultWindow))
 	{
@@ -92,7 +78,37 @@ void UUI_Manager::InitializeManager(UUI_Window_BaseOptions*& optionsUI)
 	}
 	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("The UI_Manager could not find the default UI, %s, in the UIList."), *UEnum::GetValueAsString(defaultUI));
+		if (defaultUI == EUIID::NoID)
+		{
+			UE_LOG(LogTemp, Warning, TEXT("The UI Manager's default UI is not set!"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Error, TEXT("The UI_Manager could not find the default UI, %s, in the UIList."), *UEnum::GetValueAsString(defaultUI));
+		}
+	}
+}
+
+void UUI_Manager::InitializeUIsToList(TArray<UUI_Window*> newUIs)
+{
+	for (UUI_Window* item : newUIs)
+	{
+		//Initialize the UI
+		item->InitializeWindow();
+
+		//Do not add a UI that does not have its id set
+		if (item->GetUIID() == EUIID::NoID)
+		{
+			UE_LOG(LogTemp, Error, TEXT("One of the UI Windows you just tried to add to the UI List doesn't have its ID set! It wont be added to the list."));
+			continue;
+		}
+
+		//Add the window to the list
+		UIList.Add(item);
+
+		//For each UI_Window controlled by this UI_Manager, subscribe to their events
+		item->OnSetCurrentUI.AddUniqueDynamic(this, &UUI_Manager::SetCurrentUIFromUIID);
+		item->OnSetCurrentUIToDefault.AddUniqueDynamic(this, &UUI_Manager::SetCurrentUIToDefault);
 	}
 }
 

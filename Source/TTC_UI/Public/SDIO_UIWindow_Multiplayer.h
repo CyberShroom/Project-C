@@ -22,4 +22,7 @@ protected:
 
 	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
 	class USDIO_UI_TextButton* Join;
+
+public:
+	virtual void InitializeWindow() override;
 };

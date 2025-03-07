@@ -233,3 +233,9 @@ void USDIO_UIWindow_Inventory::NativeConstruct()
 	playerInventory = NewObject<UPlayer_Inventory>();
 	hotbarInventory = NewObject<UPlayer_Hotbar>();
 }
+
+void USDIO_UIWindow_Inventory::InitializeWindow()
+{
+	UIID = EUIID::InventoryUI;
+	bAllowSubMenus = false;
+}

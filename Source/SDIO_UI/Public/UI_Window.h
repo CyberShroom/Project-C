@@ -3,50 +3,75 @@
 #pragma once
 
 #include "CoreMinimal.h"
-#include "UI_Master.h"
 #include "SDIO_UI_Enums.h"
+#include "Blueprint/UserWidget.h"
 #include "UI_Window.generated.h"
 
-
-class UUI_Manager; //Forward Declaration
 /**
- * 
+ * C Class. Contains common fields and methods for UI Windows.
  */
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FSetCurrentUI, EUIID, UIID);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FSetCurrentUIToDefault);
 
-UCLASS(meta = (ShortToolTip = "Contains the logic for UIs."))
-class SDIO_UI_API UUI_Window : public UUI_Master
+UCLASS(meta = (ShortToolTip = "C Class. Contains common fields and methods for UI Windows."))
+class SDIO_UI_API UUI_Window : public UUserWidget
 {
 	GENERATED_BODY()
 
-private:
-	UUI_Manager* managerReference = nullptr; //Forwrad Declaration, please ignore
-
 protected:
-	///<summary>How many layers deep are the submenus? Serves no purpose if overrideNav is false. Could be used for other things but not recommended.</summary>
+	///<summary>
+	/// How many layers deep are the submenus? Serves no purpose if overrideNav is false. Could be used for other things but not recommended.
+	/// </summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Internal Information", meta = (Tooltip = "A uint8 ID system designed to be used to navigate submenus."))
 	uint8 windowID = 0;
 
-public:
-	///<summary>The UIID of the window. Used to identify this object.</summary>
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "The UIID of the UI_Window."))
+	///<summary>
+	/// The UIID of the window. Used to identify this object.
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The UIID of the UI_Window."))
 	EUIID UIID = EUIID::NoID;
 
-	///<summary>Should this window override the UI_Managers Navigation system? Should be true if it contains submenus that require navigation.</summary>
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Controls whether this UI_Window should take control of UI Navigation."))
-	bool bOverrideNav = false;
+	///<summary>
+	/// Should this menu be allowed to have submenus? Must be true to use the submenu system. Make sure to override NavigateWindow or this does nothing.
+	///</summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "Should this menu be allowed to have submenus? Must be true to use the submenu system. Make sure to override NavigateWindow or this does nothing."))
+	bool bAllowSubMenus = false;
 
-	///<summary>Event Signature. Meant to be called for setting the UI_Manager's currentUI from within this window.</summary>
-	UPROPERTY(BlueprintAssignable, Category = "SDIO_UI | Events", meta = (Tooltip = "An event that, when called, sets the UI_Managers currentUI to the given UI."))
+public:
+	/// <summary>
+	/// Returns the UI Windows UIID.
+	/// </summary>
+	UFUNCTION(BlueprintPure, Category = "SDIO_UI | Getters", meta = (Tooltip = "Returns the UI Windows UIID."))
+	EUIID GetUIID();
+
+	/// <summary>
+	/// Returns bAllowSubMenus.
+	/// </summary>
+	UFUNCTION(BlueprintPure, Category = "SDIO_UI | Getters", meta = (Tooltip = "Returns bAllowSubMenus."))
+	bool GetAllowSubMenus();
+
+	///<summary>
+	/// Called when the UI Window wants to change the viewport to another UI Window.
+	///</summary>
+	UPROPERTY(BlueprintAssignable, Category = "SDIO_UI | Events", meta = (Tooltip = "Called when the UI Window wants to change the viewport to another UI Window."))
 	FSetCurrentUI OnSetCurrentUI;
 
-	///<summary>Event Signature. Meant to be called for setting the UI_Manager's currentUI to its defaultUI from within this window.</summary>
-	UPROPERTY(BlueprintAssignable, Category = "SDIO_UI | Events", meta = (Tooltip = "An event that, when called, sets the UI_Managers currentUI to it's defaultUI."))
+	///<summary>
+	/// Called when the UI Window wants to change the viewport to the UI Managers default UI.
+	///</summary>
+	UPROPERTY(BlueprintAssignable, Category = "SDIO_UI | Events", meta = (Tooltip = "Called when the UI Window wants to change the viewport to the UI Managers default UI."))
 	FSetCurrentUIToDefault OnSetCurrentUIToDefault;
 
-	///<summary>Allows the window to navigate within itself. Does nothing if overrideNav is false. Must Be Overridden or it will cause a warning.</summary>
-	UFUNCTION(BlueprintCallable, Category = "SDIO_UI | Initialization", meta = (Tooltip = "Contains logic to navigate the UI_Window. Only used if the window contains submenus or needs special code."))
+	///<summary>
+	/// Allows the window to navigate within itself. Does nothing if bAllowSubMenus is false. Must Be Overridden or it will cause a warning.
+	///</summary>
+	UFUNCTION(BlueprintCallable, Category = "SDIO_UI", meta = (Tooltip = "Contains logic to navigate the UI_Window. Only used if the window contains submenus or needs special code."))
 	virtual void NavigateWindow();
+
+	/// <summary>
+	/// Sets the default values of this instance.
+	/// </summary>
+	UFUNCTION()
+	virtual void InitializeWindow();
 };

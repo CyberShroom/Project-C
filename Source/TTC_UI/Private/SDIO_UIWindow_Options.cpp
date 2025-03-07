@@ -3,6 +3,12 @@
 
 #include "SDIO_UIWindow_Options.h"
 
+void USDIO_UIWindow_Options::InitializeWindow()
+{
+	UIID = EUIID::OptionsUI;
+	bAllowSubMenus = true;
+}
+
 void USDIO_UIWindow_Options::NativeConstruct()
 {
 	Super::NativeConstruct();
@@ -37,13 +43,15 @@ void USDIO_UIWindow_Options::DelegateExitMenu()
 
 void USDIO_UIWindow_Options::DelegateOpenAudioPanel()
 {
-	SwapUIFocus(ButtonBox, AudioPanel);
+	ButtonBox->SetVisibility(ESlateVisibility::Hidden);
+	AudioPanel->SetVisibility(ESlateVisibility::Visible);
 	windowID = 1;
 }
 
 void USDIO_UIWindow_Options::DelegateOpenControlsPanel()
 {
-	SwapUIFocus(ButtonBox, ControlsPanel);
+	ButtonBox->SetVisibility(ESlateVisibility::Hidden);
+	ControlsPanel->SetVisibility(ESlateVisibility::Visible);
 	windowID = 1;
 }
 

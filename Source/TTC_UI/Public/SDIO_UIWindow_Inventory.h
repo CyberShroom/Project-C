@@ -187,4 +187,5 @@ public:
 	void UpdateArmorValue(float newValue, float amountChanged);
 
 	virtual void NativeConstruct() override;
+	virtual void InitializeWindow() override;
 };

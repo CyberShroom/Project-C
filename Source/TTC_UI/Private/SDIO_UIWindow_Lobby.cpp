@@ -3,4 +3,8 @@
 
 #include "SDIO_UIWindow_Lobby.h"
 
-
+void USDIO_UIWindow_Lobby::InitializeWindow()
+{
+	UIID = EUIID::LobbyUI;
+	bAllowSubMenus = false;
+}
