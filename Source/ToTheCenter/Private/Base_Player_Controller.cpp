@@ -47,6 +47,10 @@ void ABase_Player_Controller::InitializePawn()
 	{
 		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &ABase_Player_Controller::InitializePawn);
 	}
+	else
+	{
+		playerShip->SetMovementReplication(false);
+	}
 }
 
 void ABase_Player_Controller::DelegateInventoryInteractionHandler(FGuid itemID, EInventoryID targetID, EInventoryID originID)
@@ -257,19 +261,10 @@ void ABase_Player_Controller::ServerRPC_InputTurn_Implementation(float joystickV
 	playerShip->ClientRPC_CheckForRotationError(playerShip->GetTargetRotation(), predictedRotation);
 }
 
-void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(float joystickValue, FVector predictedLocation, FVector clientForwardVector)
+void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(FVector clientForwardVector)
 {
-	if (IsLocalController() || movementTally > (1 / playerShip->GetMovementDuration()) * 2)
-	{
-		return;
-	}
-
-	//Prevents clients from exploiting movement
-	movementTally++;
-	UE_LOG(LogTemp, Error, TEXT("Tally is: %d"), movementTally);
-
-	playerShip->MoveShip(joystickValue, true, clientForwardVector, predictedLocation);
-	playerShip->ClientRPC_CheckForLocationError(playerShip->GetMovementTargetLocation(), predictedLocation);
+	//Add the forward vector to the timeline
+	playerShip->AddVectorToTimeline(clientForwardVector);
 }
 
 void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bool bIsPickup)
@@ -317,6 +312,8 @@ ABase_Player_Controller::ABase_Player_Controller()
 	armorBreakAudioComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("armorBreakAudio"));
 	armorBreakAudioComponent->bAutoActivate = false; // Prevent it from playing on start
 	armorBreakAudioComponent->SetupAttachment(RootComponent);
+
+	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
 void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID, bool bIsPickup)

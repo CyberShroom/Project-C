@@ -156,7 +156,7 @@ protected:
 	void Initialize();
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Starts vertical movement on the server."))
-	void ServerRPC_InputVertical(float joystickValue, FVector predictedLocation, FVector clientForwardVector);
+	void ServerRPC_InputVertical(FVector clientForwardVector);
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Stops the ship on the server."))
 	void ServerRPC_InputMovementStop(FVector predictedLocation);

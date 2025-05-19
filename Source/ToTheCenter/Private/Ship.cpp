@@ -19,8 +19,8 @@ AShip::AShip()
 	shipMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("ShipMesh"));
 	shipMesh->SetupAttachment(scene);
 
-	movementComponent = CreateDefaultSubobject<UInterpToMovementComponent>(TEXT("MovementComponent"));
-	movementComponent->Duration = 0.2;
+	movementComponent = CreateDefaultSubobject<UTTCMovementComponent>(TEXT("MovementComponent"));
+	movementComponent->Duration = movementDuration;
 	movementComponent->TeleportType = ETeleportType::ResetPhysics;
 	movementComponent->bConstrainToPlane = true;
 	movementComponent->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Z);
@@ -154,11 +154,6 @@ float AShip::GetArmor()
 	return armor;
 }
 
-FVector AShip::GetMovementTargetLocation()
-{
-	return targetLocation;
-}
-
 FRotator AShip::GetTargetRotation()
 {
 	return targetRotation;
@@ -194,20 +189,6 @@ void AShip::OnRep_currentShield()
 void AShip::OnRep_armor()
 {
 	onArmorDamage.Broadcast(armor, 0);
-}
-
-void AShip::OnRep_targetLocation()
-{
-	//If this pawn has no controller (No Player nor AI), set it to move to the target location
-	if (!GetController())
-	{
-		movementComponent->StopMovementImmediately();
-		movementComponent->ResetControlPoints();
-		movementComponent->AddControlPointPosition(FVector(0, 0, 0), true);
-		movementComponent->AddControlPointPosition(targetLocation, false);
-		movementComponent->FinaliseControlPoints();
-		movementComponent->RestartMovement();
-	}
 }
 
 void AShip::OnRep_targetRotation()
@@ -275,77 +256,48 @@ void AShip::BeginPlay()
 {
 	Super::BeginPlay();
 
-	targetLocation = GetActorLocation();
-
 	targetRotation = shipMesh->GetRelativeRotation();
 	lastPredictedRotation = shipMesh->GetRelativeRotation();
 	
 	movementComponent->Duration = movementDuration;
-
+	movementComponent->Initialize(GetActorLocation());
 
 	shipInventory = NewObject<UInventory>();
 	shipInventory->Initialize(8, currentHotbarSize * 2, EInventoryID::Hotbar_Inventory);
+
+	SetActorTickEnabled(true);
 }
 
-bool AShip::MoveShip(float joystickValue, bool useTarget, FVector forwardVector, FVector& predictedLocation)
+bool AShip::MoveShip(float joystickValue)
 {
-	//If using the actor location, don't move until reaching the last control point.
-	if (GetActorLocation() != movementComponent->ControlPoints[1].PositionControlPoint && useTarget == false)
+	//IF SERVER AND NOT HOST AND PLAYER CONTROLLED
+	if (HasAuthority() && !GetController()->IsLocalPlayerController() && IsPlayerControlled())
 	{
-		return false;
-	}
+		//Use the timeline and move the ship
+		bool result = movementComponent->Move(movementComponent->GetNextFromTimeline(), GetActorLocation(), HasAuthority());
 
-	//The location to stop interpolating
-	FVector finalLocation;
+		//On success, remove the vector from the timeline
+		if (result)
+		{
+			movementComponent->RemoveNextFromTimeline();
+		}
 
-	//The forward vector to use
-	FVector finalForwardVector;
-
-	//If forwardVector has a value, use it as the forward vector, otherwise, grab the objects forward vector
-	if (forwardVector.ContainsNaN() || forwardVector.IsZero())
-	{
-		finalForwardVector = GetCorrectedForwardVector() * (moveSpeed * 100 * joystickValue);
+		return result;
 	}
 	else
 	{
-		finalForwardVector = forwardVector * (moveSpeed * 100 * joystickValue);
+		//Create a new forward vector and move the ship
+		return movementComponent->Move(CalculateMovementForwardVector(joystickValue), GetActorLocation(), HasAuthority());
 	}
+}
 
-	//Get the location the ship will end at
-	if (useTarget)
-	{
-		finalLocation = targetLocation + finalForwardVector;
-	}
-	else
-	{
-		finalLocation = GetActorLocation() + finalForwardVector;
-	}
-	
-	//Add and reset the location offset
-	finalLocation += locationOffset;
-	locationOffset = FVector(0, 0, 0);
-
-	//Set the interpolation values
-	movementComponent->StopMovementImmediately();
-	movementComponent->ResetControlPoints();
-	movementComponent->AddControlPointPosition(FVector(0, 0, 0), true);
-	movementComponent->AddControlPointPosition(finalLocation, false);
-	movementComponent->FinaliseControlPoints();
-	movementComponent->RestartMovement();
-
-	//AddActorLocalOffset(FVector(moveSpeed * 200 * joystickValue, 0.0, 0.0));
-
-	//Set target if server or predicted if client
+void AShip::AddVectorToTimeline(FVector forwardVector)
+{
+	//Only allow server to add forward vectors to the timeline
 	if (HasAuthority())
 	{
-		targetLocation = finalLocation;
+		movementComponent->AddToTimeline(forwardVector);
 	}
-	else
-	{
-		predictedLocation = finalLocation;
-	}
-
-	return true;
 }
 
 bool AShip::TurnShip(float joystickValue, bool useTarget, FRotator& predictedRotation)
@@ -453,7 +405,7 @@ void AShip::StopShip(FVector& predictedLocation)
 			}
 		}
 
-		targetLocation = GetActorLocation();
+		//targetLocation = GetActorLocation();
 	}
 	else
 	{
@@ -491,6 +443,21 @@ FVector AShip::GetCorrectedForwardVector()
 	return FVector(shipMesh->GetForwardVector().Y, shipMesh->GetForwardVector().X * -1, shipMesh->GetForwardVector().Z);
 }
 
+FVector AShip::CalculateMovementForwardVector(float joystickValue)
+{
+	return GetCorrectedForwardVector() * (moveSpeed * 100 * joystickValue);
+}
+
+FVector AShip::GetTargetPosition()
+{
+	return movementComponent->GetTargetPosition();
+}
+
+void AShip::SetMovementReplication(bool value)
+{
+	movementComponent->useReplicatedPosition = value;
+}
+
 void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, float amount)
 {
 	if (isDamage)
@@ -503,16 +470,9 @@ void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, flo
 	}
 }
 
-void AShip::ClientRPC_CheckForLocationError_Implementation(FVector trueLocation, FVector predictedLocation)
+void AShip::ClientRPC_CheckForLocationError_Implementation(FVector trueLocation)
 {
-	if (locationErrorCheckWait > 0)
-	{
-		locationErrorCheckWait--;
-		return;
-	}
-
-	locationOffset = trueLocation - predictedLocation;
-	locationErrorCheckWait = 1 / movementDuration;
+	movementComponent->CheckForDesync(trueLocation);
 }
 
 void AShip::ClientRPC_CheckForRotationError_Implementation(FRotator trueRotation, FRotator predictedRotation)
@@ -569,6 +529,18 @@ void AShip::Tick(float DeltaTime)
 			shieldRegenTimer = 0;
 		}
 	}
+
+	//Only run on server, not the host though.
+	//Make the ship automatically move if it has forward vectors in its timeline.
+	if (HasAuthority() && !GetController()->IsLocalPlayerController())
+	{
+		//Move the ship when possible
+		if (MoveShip(0))
+		{
+			//When successful, call check for desync
+			ClientRPC_CheckForLocationError(movementComponent->GetTargetPosition());
+		}
+	}
 }
 
 // Called to bind functionality to input
@@ -588,7 +560,6 @@ void AShip::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AShip, armor);
 	DOREPLIFETIME(AShip, maxShield);
 	DOREPLIFETIME(AShip, currentShield);
-	DOREPLIFETIME(AShip, targetLocation);
 	DOREPLIFETIME(AShip, targetRotation);
 }
 

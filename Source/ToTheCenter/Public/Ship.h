@@ -7,7 +7,7 @@
 #include "SDIO_Item.h"
 #include "Camera/CameraComponent.h"
 #include "Inventory.h"
-#include "Components/InterpToMovementComponent.h"
+#include "TTCMovementComponent.h"
 #include "Ship.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullDamage, float, newCurrentHull, float, damageTaken);
@@ -26,6 +26,8 @@ class TOTHECENTER_API AShip : public APawn
 	GENERATED_BODY()
 
 private:
+	// HEALTH SYSTEM //
+
 	/// <summary>
 	/// The ships current health.
 	/// </summary>
@@ -69,16 +71,56 @@ private:
 	float shieldRegenTimer = 0;
 
 	/// <summary>
-	/// How much time must pass before accruing time again
+	/// Called when max hull replicates to clients.
 	/// </summary>
-	UPROPERTY()
-	float outOfCombatTimer = 0;
+	UFUNCTION()
+	void OnRep_maxHull();
 
 	/// <summary>
-	/// The last target location set by the server.
+	/// Called when hull replicates to clients.
 	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_targetLocation)
-	FVector targetLocation;
+	UFUNCTION()
+	void OnRep_currentHull();
+
+	/// <summary>
+	/// Called when max shield replicates to clients.
+	/// </summary>
+	UFUNCTION()
+	void OnRep_maxShield();
+
+	/// <summary>
+	/// Called when shield replicates to clients.
+	/// </summary>
+	UFUNCTION()
+	void OnRep_currentShield();
+
+	/// <summary>
+	/// Called when armor replicates to clients.
+	/// </summary>
+	UFUNCTION()
+	void OnRep_armor();
+
+	/// <summary>
+	/// Runs the related event on the client side for cosmetic purposes.
+	/// </summary>
+	/// <param name="isDamage">If true, run onDamage. If false, Run onHeal.</param>
+	UFUNCTION(Client, Unreliable)
+	void ClientRPC_NotifyClientOfHullChange(bool isDamage, float amount);
+
+	/// <summary>
+	/// Runs the related event on the client side for cosmetic purposes.
+	/// </summary>
+	UFUNCTION(Client, Unreliable)
+	void ClientRPC_NotifyClientOfShieldChange(float amount);
+
+	/// <summary>
+	/// Runs the related event on the client side for cosmetic purposes.
+	/// </summary>
+	UFUNCTION(Client, Unreliable)
+	void ClientRPC_NotifyClientOfArmorChange(bool isDamage, float amount);
+
+
+	// MOVEMENT SYSTEM //
 
 	/// <summary>
 	/// The last target rotation set by the server.
@@ -129,71 +171,25 @@ private:
 	bool bStopRotation = false;
 
 	/// <summary>
-	/// Called when max hull replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_maxHull();
-
-	/// <summary>
-	/// Called when hull replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_currentHull();
-
-	/// <summary>
-	/// Called when max shield replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_maxShield();
-
-	/// <summary>
-	/// Called when shield replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_currentShield();
-
-	/// <summary>
-	/// Called when armor replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_armor();
-
-	/// <summary>
-	/// Called when target location replicates to clients
-	/// </summary>
-	UFUNCTION()
-	void OnRep_targetLocation();
-
-	/// <summary>
 	/// Called when target rotation replicates to clients
 	/// </summary>
 	UFUNCTION()
 	void OnRep_targetRotation();
 
 	/// <summary>
-	/// Runs the related event on the client side for cosmetic purposes.
-	/// </summary>
-	/// <param name="isDamage">If true, run onDamage. If false, Run onHeal.</param>
-	UFUNCTION(Client, Unreliable)
-	void ClientRPC_NotifyClientOfHullChange(bool isDamage, float amount);
-
-	/// <summary>
-	/// Runs the related event on the client side for cosmetic purposes.
-	/// </summary>
-	UFUNCTION(Client, Unreliable)
-	void ClientRPC_NotifyClientOfShieldChange(float amount);
-
-	/// <summary>
-	/// Runs the related event on the client side for cosmetic purposes.
-	/// </summary>
-	UFUNCTION(Client, Unreliable)
-	void ClientRPC_NotifyClientOfArmorChange(bool isDamage, float amount);
-
-	/// <summary>
-	/// 
+	/// Rotates the entity
 	/// </summary>
 	UFUNCTION()
 	void Rotate(FRotator newRotation, float elapsedTime);
+
+
+	// OTHER //
+
+	/// <summary>
+	/// How much time must pass before accruing time again
+	/// </summary>
+	UPROPERTY()
+	float outOfCombatTimer = 0;
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
@@ -203,7 +199,7 @@ protected:
 	UCameraComponent* camera;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
-	UInterpToMovementComponent* movementComponent;
+	UTTCMovementComponent* movementComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UStaticMeshComponent* shipMesh;
@@ -317,9 +313,6 @@ public:
 	float GetArmor();
 
 	UFUNCTION(BlueprintPure, Category = "Ship")
-	FVector GetMovementTargetLocation();
-
-	UFUNCTION(BlueprintPure, Category = "Ship")
 	FRotator GetTargetRotation();
 
 	UFUNCTION(BlueprintPure, Category = "Ship")
@@ -327,14 +320,15 @@ public:
 
 	/// <summary>
 	/// Moves the ship.
+	/// If done on server, the server will automatically use the whatever values are in the ships timeline. JoystickValue is only used on the client.
 	/// </summary>
 	/// <param name="joystickValue">Input value</param>
-	/// <param name="useTarget">Whether to use targetLocation or Actor Location.</param>
-	/// <param name="forwardVector">If given a value, moves the ship using the value as the forward vector.</param>
-	/// <param name="predictedLocation">location the client predicted</param>
-	/// <returns></returns>
+	/// <returns>Returns true if no errors occur.</returns>
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship."))
-	bool MoveShip(float joystickValue, bool useTarget, FVector forwardVector, FVector& predictedLocation);
+	bool MoveShip(float joystickValue);
+
+	UFUNCTION()
+	void AddVectorToTimeline(FVector forwardVector);
 
 	/// <summary>Contains logic for how this ship should turn.</summary>
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
@@ -349,11 +343,24 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Returns the ships corrected forward vector."))
 	FVector GetCorrectedForwardVector();
 
+	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Returns a forward vector for movement purposes."))
+	FVector CalculateMovementForwardVector(float joystickValue);
+
+	UFUNCTION()
+	FVector GetTargetPosition();
+
+	/// <summary>
+	/// Temporary solution to a problem. Should be changed later.
+	/// </summary>
+	/// <param name="value"></param>
+	UFUNCTION()
+	void SetMovementReplication(bool value);
+
 	/// <summary>
 	/// Checks for error between the 2 given points and sets an offset to fix it.
 	/// </summary>
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "Ship", meta = (Tooltip = "Checks for error between the 2 given points and sets an offset to fix it."))
-	void ClientRPC_CheckForLocationError(FVector trueLocation, FVector predictedLocation);
+	void ClientRPC_CheckForLocationError(FVector trueLocation);
 
 	/// <summary>
 	/// Checks for error between the 2 given rotations and sets an offset to fix it.
@@ -367,6 +374,6 @@ public:
 	// Called to bind functionality to input
 	virtual void SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent) override;
 	// Called to replicate movement
-	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const;
+	virtual void GetLifetimeReplicatedProps(TArray< FLifetimeProperty >& OutLifetimeProps) const override;
 
 };

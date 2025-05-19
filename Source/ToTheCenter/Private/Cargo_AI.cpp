@@ -30,6 +30,6 @@ void ACargo_AI::Tick(float DeltaTime)
 
 	if (bIsTickable)
 	{
-		cargoShip->MoveShip(1.0, true, FVector::ZeroVector, targetLocation);
+		cargoShip->MoveShip(1.0);
 	}
 }
