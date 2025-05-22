@@ -328,14 +328,14 @@ public:
 	bool MoveShip(float joystickValue);
 
 	UFUNCTION()
-	void AddVectorToTimeline(FVector forwardVector);
+	void AddVectorToTimeline(FVector forwardVector, bool isStop = false);
 
 	/// <summary>Contains logic for how this ship should turn.</summary>
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
 	bool TurnShip(float joystickValue, bool useTarget, FRotator& predictedRotation);
 
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ship."))
-	void StopShip(FVector& predictedLocation);
+	void StopShip();
 
 	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ships rotation."))
 	void StopShipRotation(FRotator& predictedRotation);

@@ -274,7 +274,7 @@ bool AShip::MoveShip(float joystickValue)
 	if (HasAuthority() && !GetController()->IsLocalPlayerController() && IsPlayerControlled())
 	{
 		//Use the timeline and move the ship
-		bool result = movementComponent->Move(movementComponent->GetNextFromTimeline(), GetActorLocation(), HasAuthority());
+		bool result = movementComponent->Move(movementComponent->GetNextFromTimeline().vector, GetActorLocation(), HasAuthority());
 
 		//On success, remove the vector from the timeline
 		if (result)
@@ -291,12 +291,12 @@ bool AShip::MoveShip(float joystickValue)
 	}
 }
 
-void AShip::AddVectorToTimeline(FVector forwardVector)
+void AShip::AddVectorToTimeline(FVector forwardVector, bool isStop)
 {
-	//Only allow server to add forward vectors to the timeline
+	//Only allow server to add forward vectors to the timeline. If isStop is true, the vector is a stop vector instead.
 	if (HasAuthority())
 	{
-		movementComponent->AddToTimeline(forwardVector);
+		movementComponent->AddToTimeline(forwardVector, isStop);
 	}
 }
 
@@ -379,44 +379,26 @@ bool AShip::TurnShip(float joystickValue, bool useTarget, FRotator& predictedRot
 	//shipMesh->AddLocalRotation(FRotator(0.0, turnSpeed * 75 * joystickValue, 0.0));
 }
 
-void AShip::StopShip(FVector& predictedLocation)
+void AShip::StopShip()
 {
-	//Stop movement immediately
-	movementComponent->StopMovementImmediately();
-
-	if (HasAuthority())
+	//If SERVER and IS NOT HOST and IS PLAYER CONTROLLED
+	if (HasAuthority() && !GetController()->IsLocalPlayerController() && IsPlayerControlled())
 	{
-		if (IsLocallyControlled() == false)
+		bool result = movementComponent->Stop(GetActorLocation(), true);
+
+		//True means the ship stopped. Set its current position to the target to prevent desync
+		if (result)
 		{
-			//Validate that argument is valid
-			FVector direction = (movementComponent->ControlPoints[1].PositionControlPoint - GetActorLocation()).GetSafeNormal();
-			float length = FVector::Dist(GetActorLocation(), movementComponent->ControlPoints[1].PositionControlPoint);
-
-			float projectedLength = FVector::DotProduct(predictedLocation - GetActorLocation(), direction);
-
-			if (projectedLength >= 0 && projectedLength <= length)
-			{
-				SetActorLocation(predictedLocation);
-			}
-			else
-			{
-				movementComponent->RestartMovement();
-				return;
-			}
+			SetActorLocation(movementComponent->GetTargetPosition());
+			movementComponent->RemoveNextFromTimeline();
 		}
-
-		//targetLocation = GetActorLocation();
 	}
 	else
 	{
-		predictedLocation = GetActorLocation();
+		//Clients and AI always stop immediatly
+		movementComponent->Stop(GetActorLocation(), HasAuthority());
+		SetActorLocation(movementComponent->GetTargetPosition());
 	}
-
-	//Add control points to prevent array out of bound error
-	movementComponent->ResetControlPoints();
-	movementComponent->AddControlPointPosition(FVector(0, 0, 0), true);
-	movementComponent->AddControlPointPosition(GetActorLocation(), false);
-	movementComponent->FinaliseControlPoints();
 }
 
 void AShip::StopShipRotation(FRotator& predictedRotation)
@@ -534,13 +516,23 @@ void AShip::Tick(float DeltaTime)
 	//Make the ship automatically move if it has forward vectors in its timeline.
 	if (HasAuthority() && !GetController()->IsLocalPlayerController())
 	{
-		//Move the ship when possible
-		if (MoveShip(0))
+		if (movementComponent->GetNextFromTimeline().isStop)
 		{
-			//When successful, call check for desync
-			ClientRPC_CheckForLocationError(movementComponent->GetTargetPosition());
+			StopShip();
+		}
+		else
+		{
+			//Move the ship when possible
+			if (MoveShip(0))
+			{
+				//When successful, call check for desync
+				ClientRPC_CheckForLocationError(movementComponent->GetTargetPosition());
+			}
 		}
 	}
+
+	//If movement debug is enabled, this will draw debug lines.
+	movementComponent->DrawDebugLines(GetActorLocation());
 }
 
 // Called to bind functionality to input

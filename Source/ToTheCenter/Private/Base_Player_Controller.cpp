@@ -238,16 +238,13 @@ void ABase_Player_Controller::ServerRPC_InputTurnStop_Implementation(FRotator pr
 
 void ABase_Player_Controller::ServerRPC_InputMovementStop_Implementation(FVector predictedLocation)
 {
+	//Prevent host from running this
 	if (IsLocalController())
 	{
 		return;
 	}
 
-	//Prevents clients from exploiting movement
-	movementTally++;
-	UE_LOG(LogTemp, Error, TEXT("Tally is: %d"), movementTally);
-
-	playerShip->StopShip(predictedLocation);
+	playerShip->AddVectorToTimeline(predictedLocation, true);
 }
 
 void ABase_Player_Controller::ServerRPC_InputTurn_Implementation(float joystickValue, FRotator predictedRotation)
@@ -263,6 +260,12 @@ void ABase_Player_Controller::ServerRPC_InputTurn_Implementation(float joystickV
 
 void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(FVector clientForwardVector)
 {
+	//prevent host from running this
+	if (IsLocalController())
+	{
+		return;
+	}
+
 	//Add the forward vector to the timeline
 	playerShip->AddVectorToTimeline(clientForwardVector);
 }

@@ -7,6 +7,21 @@
 #include "Net/UnrealNetwork.h"
 #include "TTCMovementComponent.generated.h"
 
+USTRUCT()
+struct FMovementState
+{
+	GENERATED_BODY()
+
+	//The vector contained in the state
+	FVector vector;
+
+	//If true, this vector is a stop command
+	bool isStop;
+
+	//If isStop is true, this flag determines if it is a valid stop vector.
+	bool isVerified = false;
+};
+
 /**
  * 
  */
@@ -37,7 +52,7 @@ private:
 	/// On a server, this contians a list of forward vectors that are used to tell the ship where to move at step by step. These vectors allow movement to look smooth even under bad network conditions.
 	/// </summary>
 	UPROPERTY()
-	TArray<FVector> movementTimeline;
+	TArray<FMovementState> movementTimeline;
 
 	/// <summary>
 	/// When an offset is applied, desync detection is disabled. This index value determines when desync detection should be re-enabled to prevent over correction.
@@ -58,14 +73,17 @@ public:
 	UPROPERTY()
 	bool useReplicatedPosition = true;
 
+	UPROPERTY()
+	bool debugMovement = true;
+
 	UFUNCTION()
-	void AddToTimeline(FVector newVector);
+	void AddToTimeline(FVector newVector, bool isStop = false);
 
 	UFUNCTION()
 	void RemoveNextFromTimeline();
 
 	UFUNCTION()
-	FVector GetNextFromTimeline();
+	FMovementState GetNextFromTimeline();
 
 	UFUNCTION()
 	FVector GetTargetPosition();
@@ -84,6 +102,18 @@ public:
 	/// </summary>
 	UFUNCTION()
 	void Turn();
+
+	/// <summary>
+	/// Stop the objects movement
+	/// </summary>
+	UFUNCTION()
+	bool Stop(FVector currentPosition, bool isServer);
+
+	/// <summary>
+	/// Draws debug lines for movement.
+	/// </summary>
+	UFUNCTION()
+	void DrawDebugLines(FVector currentPosition);
 
 	UFUNCTION()
 	void Initialize(FVector originalPosition);
