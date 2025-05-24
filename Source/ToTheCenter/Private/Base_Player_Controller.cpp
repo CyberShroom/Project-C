@@ -49,7 +49,14 @@ void ABase_Player_Controller::InitializePawn()
 	}
 	else
 	{
-		playerShip->SetMovementReplication(false);
+		if (HasAuthority() && !IsLocalPlayerController())
+		{
+			playerShip->Initialize(false, true);
+		}
+		else
+		{
+			playerShip->Initialize(false, false);
+		}
 	}
 }
 
@@ -233,7 +240,7 @@ void ABase_Player_Controller::ServerRPC_InputTurnStop_Implementation(FRotator pr
 		return;
 	}
 
-	playerShip->StopShipRotation(predictedRotation);
+	playerShip->AddRotationToTimeline(predictedRotation, true);
 }
 
 void ABase_Player_Controller::ServerRPC_InputMovementStop_Implementation(FVector predictedLocation)
@@ -247,27 +254,50 @@ void ABase_Player_Controller::ServerRPC_InputMovementStop_Implementation(FVector
 	playerShip->AddVectorToTimeline(predictedLocation, true);
 }
 
-void ABase_Player_Controller::ServerRPC_InputTurn_Implementation(float joystickValue, FRotator predictedRotation)
+void ABase_Player_Controller::ServerRPC_InputTurn_Implementation(float joystickValue)
 {
+	//Prevent host from running this
 	if (IsLocalController())
 	{
 		return;
 	}
 
-	playerShip->TurnShip(joystickValue, true, predictedRotation);
-	playerShip->ClientRPC_CheckForRotationError(playerShip->GetTargetRotation(), predictedRotation);
+	//Joystick value cannot be higher than 1.0 nor less than -1.0
+	if (joystickValue > 1.0)
+	{
+		joystickValue = 1.0;
+	}
+	else if (joystickValue < -1.0)
+	{
+		joystickValue = -1.0;
+	}
+
+	//Add the rotation to the timeline
+	playerShip->AddRotationToTimeline(playerShip->CalculateRotation(joystickValue));
+
+	//playerShip->ClientRPC_CheckForRotationError(playerShip->GetTargetRotation(), predictedRotation);
 }
 
-void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(FVector clientForwardVector)
+void ABase_Player_Controller::ServerRPC_InputVertical_Implementation(FVector clientForwardVector, float joystickValue)
 {
 	//prevent host from running this
 	if (IsLocalController())
 	{
 		return;
 	}
+	
+	//Joystick value cannot be higher than 1.0 nor less than -1.0
+	if (joystickValue > 1.0)
+	{
+		joystickValue = 1.0;
+	}
+	else if (joystickValue < -1.0)
+	{
+		joystickValue = -1.0;
+	}
 
 	//Add the forward vector to the timeline
-	playerShip->AddVectorToTimeline(clientForwardVector);
+	playerShip->AddVectorToTimeline(playerShip->CalculateMovementVector(joystickValue, clientForwardVector));
 }
 
 void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bool bIsPickup)
@@ -283,14 +313,6 @@ void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bo
 void ABase_Player_Controller::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
-
-	tallyTimer += DeltaTime;
-
-	if (tallyTimer >= 1)
-	{
-		movementTally = 0;
-		tallyTimer = 0;
-	}
 }
 
 ABase_Player_Controller::ABase_Player_Controller()

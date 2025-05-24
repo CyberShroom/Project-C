@@ -10,6 +10,7 @@ void ACargo_AI::Initialize()
 	if (IsValid(cargoShip))
 	{
 		bIsTickable = true;
+		cargoShip->Initialize(false, false);
 	}
 	else
 	{

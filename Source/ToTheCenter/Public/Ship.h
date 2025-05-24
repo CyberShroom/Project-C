@@ -123,65 +123,10 @@ private:
 	// MOVEMENT SYSTEM //
 
 	/// <summary>
-	/// The last target rotation set by the server.
-	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_targetRotation)
-	FRotator targetRotation;
-
-	/// <summary>
-	/// The last target rotation set by the server.
-	/// </summary>
-	UPROPERTY()
-	FRotator lastPredictedRotation;
-
-	/// <summary>
 	/// The interpolation speed needed to rotate at a 0.2 second duration
 	/// </summary>
 	UPROPERTY()
 	float rotationSpeed;
-
-	/// <summary>
-	/// Offset vector to add to the next predicted location to move the client in line with the server
-	/// </summary>
-	UPROPERTY()
-	FVector locationOffset = FVector(0, 0, 0);
-
-	/// <summary>
-	/// Offset rotator to add to the next predicted rotation to move the client in line with the server
-	/// </summary>
-	UPROPERTY()
-	FRotator rotationOffset = FRotator(0, 0, 0);
-
-	/// <summary>
-	/// How many movement checks to wait for before checking for desync again.
-	/// </summary>
-	UPROPERTY()
-	int locationErrorCheckWait = 0;
-
-	/// <summary>
-	/// How many rotation checks to wait for before checking for desync again.
-	/// </summary>
-	UPROPERTY()
-	int rotationErrorCheckWait = 0;
-
-	/// <summary>
-	/// Flag that immediatly stops the objects rotation
-	/// </summary>
-	UPROPERTY()
-	bool bStopRotation = false;
-
-	/// <summary>
-	/// Called when target rotation replicates to clients
-	/// </summary>
-	UFUNCTION()
-	void OnRep_targetRotation();
-
-	/// <summary>
-	/// Rotates the entity
-	/// </summary>
-	UFUNCTION()
-	void Rotate(FRotator newRotation, float elapsedTime);
-
 
 	// OTHER //
 
@@ -312,11 +257,21 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Ship")
 	float GetArmor();
 
-	UFUNCTION(BlueprintPure, Category = "Ship")
-	FRotator GetTargetRotation();
+	/// <summary>
+	/// Adds a vector to the movement timeline
+	/// </summary>
+	/// <param name="forwardVector">Vector to add.</param>
+	/// <param name="isStop">Whether this command will stop movement or not</param>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Adds a vector to the movement timeline."))
+	void AddVectorToTimeline(FVector forwardVector, bool isStop = false);
 
-	UFUNCTION(BlueprintPure, Category = "Ship")
-	float GetMovementDuration();
+	/// <summary>
+	/// Adds a rotation to the movement timeline.
+	/// </summary>
+	/// <param name="rotation">Rotation to add</param>
+	/// <param name="isStop">Whether this command will stop movement or not</param>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Adds a rotation to the movement timeline."))
+	void AddRotationToTimeline(FRotator rotation, bool isStop = false);
 
 	/// <summary>
 	/// Moves the ship.
@@ -324,49 +279,56 @@ public:
 	/// </summary>
 	/// <param name="joystickValue">Input value</param>
 	/// <returns>Returns true if no errors occur.</returns>
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Moves the ship."))
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Moves the ship."))
 	bool MoveShip(float joystickValue);
 
-	UFUNCTION()
-	void AddVectorToTimeline(FVector forwardVector, bool isStop = false);
-
 	/// <summary>Contains logic for how this ship should turn.</summary>
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Tells the ship to turn. joystickValue is a modifier between 0 and 1."))
-	bool TurnShip(float joystickValue, bool useTarget, FRotator& predictedRotation);
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Tells the ship to turn."))
+	bool TurnShip(float joystickValue);
 
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ship."))
+	/// <summary>
+	/// Stops the ships movement
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Stops the ship."))
 	void StopShip();
 
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Stops the ships rotation."))
-	void StopShipRotation(FRotator& predictedRotation);
+	/// <summary>
+	/// Stops the ships rotation
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Stops the ships rotation."))
+	void StopShipRotation();
 
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Returns the ships corrected forward vector."))
+	/// <summary>
+	/// Returns the forward vector, corrected to match the ship mesh.
+	/// </summary>
+	/// <returns>Returns the forward vector, corrected to match the ship mesh.</returns>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Returns the ships corrected forward vector."))
 	FVector GetCorrectedForwardVector();
 
-	UFUNCTION(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Returns a forward vector for movement purposes."))
-	FVector CalculateMovementForwardVector(float joystickValue);
+	/// <summary>
+	/// Calculates the amount to move forward by
+	/// </summary>
+	/// <param name="joystickValue"></param>
+	/// <param name="vector">Base vector to add the amount to</param>
+	/// <returns>Returns the base vector + the amount to add</returns>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Returns a forward vector for movement purposes."))
+	FVector CalculateMovementVector(float joystickValue, FVector vector);
 
+	/// <summary>
+	/// Calculates the amount to add to a rotation
+	/// </summary>
+	/// <param name="joystickValue"></param>
+	/// <returns>Returns a rotator that only contains the amount, not the base rotation!</returns>
+	UFUNCTION(BlueprintCallable, Category = "Ship | Movement", meta = (Tooltip = "Calculates the amount to add to a rotation."))
+	FRotator CalculateRotation(float joystickValue);
+
+	/// <summary>
+	/// Initializes some values from the ship and finishes initializing the movement component
+	/// </summary>
+	/// <param name="useReplication">Whether this instance of the ship should use the replicated location from the movement component. False = CLIENT OWNED INSTANCE.</param>
+	/// <param name="canRun">Whether this instance of the ship can use the run function from the movement component. False = CLIENT OWNED INSTANCE.</param>
 	UFUNCTION()
-	FVector GetTargetPosition();
-
-	/// <summary>
-	/// Temporary solution to a problem. Should be changed later.
-	/// </summary>
-	/// <param name="value"></param>
-	UFUNCTION()
-	void SetMovementReplication(bool value);
-
-	/// <summary>
-	/// Checks for error between the 2 given points and sets an offset to fix it.
-	/// </summary>
-	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "Ship", meta = (Tooltip = "Checks for error between the 2 given points and sets an offset to fix it."))
-	void ClientRPC_CheckForLocationError(FVector trueLocation);
-
-	/// <summary>
-	/// Checks for error between the 2 given rotations and sets an offset to fix it.
-	/// </summary>
-	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "Ship", meta = (Tooltip = "Checks for error between the 2 given rotations and sets an offset to fix it."))
-	void ClientRPC_CheckForRotationError(FRotator trueRotation, FRotator predictedRotation);
+	void Initialize(bool useReplication, bool canRun);
 
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;

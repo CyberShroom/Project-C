@@ -15,8 +15,6 @@ ACargoShip::ACargoShip()
 void ACargoShip::BeginPlay()
 {
 	Super::BeginPlay();
-
-
 }
 
 void ACargoShip::Tick(float DeltaTime)

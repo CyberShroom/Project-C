@@ -154,16 +154,6 @@ float AShip::GetArmor()
 	return armor;
 }
 
-FRotator AShip::GetTargetRotation()
-{
-	return targetRotation;
-}
-
-float AShip::GetMovementDuration()
-{
-	return movementDuration;
-}
-
 void AShip::OnRep_maxHull()
 {
 	onMaxHullChanged.Broadcast(maxHull);
@@ -189,14 +179,6 @@ void AShip::OnRep_currentShield()
 void AShip::OnRep_armor()
 {
 	onArmorDamage.Broadcast(armor, 0);
-}
-
-void AShip::OnRep_targetRotation()
-{
-	if (!GetController())
-	{
-		Rotate(targetRotation, 0);
-	}
 }
 
 void AShip::ClientRPC_NotifyClientOfShieldChange_Implementation(float amount)
@@ -226,41 +208,13 @@ void AShip::ClientRPC_NotifyClientOfArmorChange_Implementation(bool isDamage, fl
 	}
 }
 
-void AShip::Rotate(FRotator newRotation, float elapsedTime)
-{
-	//Stop rotation if the flag is true
-	if (bStopRotation)
-	{
-		return;
-	}
-
-	//Keep track of time
-	elapsedTime += GetWorld()->GetDeltaSeconds();
-
-	//Increment the rotation
-	shipMesh->SetRelativeRotation(FMath::RInterpConstantTo(shipMesh->GetRelativeRotation(), newRotation, GetWorld()->GetDeltaSeconds(), rotationSpeed));
-
-	//Continue on next tick or set the rotation when done
-	if (elapsedTime >= movementDuration)
-	{
-		shipMesh->SetRelativeRotation(newRotation);
-	}
-	else
-	{
-		GetWorld()->GetTimerManager().SetTimerForNextTick([this, newRotation, elapsedTime]() {Rotate(newRotation, elapsedTime); });
-	}
-}
-
 // Called when the game starts or when spawned
 void AShip::BeginPlay()
 {
 	Super::BeginPlay();
 
-	targetRotation = shipMesh->GetRelativeRotation();
-	lastPredictedRotation = shipMesh->GetRelativeRotation();
-	
 	movementComponent->Duration = movementDuration;
-	movementComponent->Initialize(GetActorLocation());
+	movementComponent->InitializeFromShip(GetActorLocation(), shipMesh);
 
 	shipInventory = NewObject<UInventory>();
 	shipInventory->Initialize(8, currentHotbarSize * 2, EInventoryID::Hotbar_Inventory);
@@ -270,25 +224,14 @@ void AShip::BeginPlay()
 
 bool AShip::MoveShip(float joystickValue)
 {
-	//IF SERVER AND NOT HOST AND PLAYER CONTROLLED
-	if (HasAuthority() && !GetController()->IsLocalPlayerController() && IsPlayerControlled())
+	if (HasAuthority() && !GetController()->IsLocalPlayerController() && GetController()->IsPlayerController())
 	{
-		//Use the timeline and move the ship
-		bool result = movementComponent->Move(movementComponent->GetNextFromTimeline().vector, GetActorLocation(), HasAuthority());
-
-		//On success, remove the vector from the timeline
-		if (result)
-		{
-			movementComponent->RemoveNextFromTimeline();
-		}
-
-		return result;
+		UE_LOG(LogTemp, Warning, TEXT("Invalid call to MoveShip from a Ship Actor on the server. MoveShip can only be called by the host and AI on the server."));
+		return false;
 	}
-	else
-	{
-		//Create a new forward vector and move the ship
-		return movementComponent->Move(CalculateMovementForwardVector(joystickValue), GetActorLocation(), HasAuthority());
-	}
+
+	//Create a new forward vector and move the ship
+	return movementComponent->Move(CalculateMovementVector(joystickValue, GetCorrectedForwardVector()), GetActorLocation(), HasAuthority());
 }
 
 void AShip::AddVectorToTimeline(FVector forwardVector, bool isStop)
@@ -296,128 +239,56 @@ void AShip::AddVectorToTimeline(FVector forwardVector, bool isStop)
 	//Only allow server to add forward vectors to the timeline. If isStop is true, the vector is a stop vector instead.
 	if (HasAuthority())
 	{
-		movementComponent->AddToTimeline(forwardVector, isStop);
+		movementComponent->AddVectorToTimeline(forwardVector, isStop);
 	}
 }
 
-bool AShip::TurnShip(float joystickValue, bool useTarget, FRotator& predictedRotation)
+void AShip::AddRotationToTimeline(FRotator rotation, bool isStop)
 {
-	//Normalized rotation values for comparison and checking for errrors
-	float normalizedShipYaw = FMath::Fmod(shipMesh->GetRelativeRotation().Yaw + 180.0f, 360.0f) - 180.0f;
-	float normalizedPredictedYaw = FMath::Fmod(lastPredictedRotation.Yaw + 180.0f, 360.0f) - 180.0f;
-
-	//Normalize ship yaw values
-	if (normalizedShipYaw < -180)
-	{
-		normalizedShipYaw += 360;
-	}
-	else if (normalizedShipYaw > 180)
-	{
-		normalizedShipYaw -= 360;
-	}
-
-	//Normalize predicted yaw values
-	if (normalizedPredictedYaw < -180)
-	{
-		normalizedPredictedYaw += 360;
-	}
-	else if (normalizedPredictedYaw > 180)
-	{
-		normalizedPredictedYaw -= 360;
-	}
-
-	//If using relative rotation and ship Yaw is not at the target yaw, don't rotate until it matches.
-	if (FMath::IsNearlyEqual(normalizedShipYaw, normalizedPredictedYaw) == false && useTarget == false && bStopRotation == false)
-	{
-		//Check for edge case. If either edge case is true, do not return false. If neither edge case is true, return false.
-		if (!(normalizedShipYaw == 180.0f && normalizedPredictedYaw == -180.0f) && !(normalizedShipYaw == -180.0f && normalizedPredictedYaw == 180.0f))
-		{
-			return false;
-		}
-	}
-
-	//If true, reset the value
-	if (bStopRotation)
-	{
-		bStopRotation = false;
-	}
-
-	//The rotation to set
-	FRotator finalRotation;
-
-	//Get the rotation to go to
-	if (useTarget)
-	{
-		finalRotation = targetRotation + FRotator(0, turnSpeed * 10 * joystickValue, 0);
-	}
-	else
-	{
-		finalRotation = shipMesh->GetRelativeRotation() + FRotator(0, turnSpeed * 10 * joystickValue, 0);
-	}
-
-	//Add the offset
-	finalRotation + rotationOffset;
-	rotationOffset = FRotator(0, 0, 0);
-
-	//Set target if server
+	//Only allow server to add rotation to the timeline. If isStop is true, the rotation is a stop rotation instead.
 	if (HasAuthority())
 	{
-		targetRotation = finalRotation;
+		movementComponent->AddRotationToTimeline(rotation, isStop);
 	}
-	else
+}
+
+bool AShip::TurnShip(float joystickValue)
+{
+	//If is server, not host, and not ai
+	if (HasAuthority() && !GetController()->IsLocalPlayerController() && GetController()->IsPlayerController())
 	{
-		predictedRotation = finalRotation;
+		UE_LOG(LogTemp, Warning, TEXT("Invalid call to TurnShip from a Ship Actor on the server. TurnShip can only be called by the host and AI on the server."));
+		return false;
 	}
-	lastPredictedRotation = finalRotation;
 
-	//Begin rotating
-	rotationSpeed = FMath::Abs(shipMesh->GetRelativeRotation().Yaw - finalRotation.Yaw) / movementDuration;
-	Rotate(finalRotation, 0);
-
-	return true;
-
-	//shipMesh->AddLocalRotation(FRotator(0.0, turnSpeed * 75 * joystickValue, 0.0));
+	//Create a new rotation and turn the ship
+	return movementComponent->Turn(CalculateRotation(joystickValue), HasAuthority());
 }
 
 void AShip::StopShip()
 {
-	//If SERVER and IS NOT HOST and IS PLAYER CONTROLLED
-	if (HasAuthority() && !GetController()->IsLocalPlayerController() && IsPlayerControlled())
+	//If is server, not host, and not AI
+	if (HasAuthority() && !GetController()->IsLocalPlayerController() && GetController()->IsPlayerController())
 	{
-		bool result = movementComponent->Stop(GetActorLocation(), true);
+		UE_LOG(LogTemp, Warning, TEXT("Invalid call to StopShip from a Ship Actor on the server. StopShip can only be called by the host and AI on the server."));
+		return;
+	}
 
-		//True means the ship stopped. Set its current position to the target to prevent desync
-		if (result)
-		{
-			SetActorLocation(movementComponent->GetTargetPosition());
-			movementComponent->RemoveNextFromTimeline();
-		}
-	}
-	else
-	{
-		//Clients and AI always stop immediatly
-		movementComponent->Stop(GetActorLocation(), HasAuthority());
-		SetActorLocation(movementComponent->GetTargetPosition());
-	}
+	//Clients and AI always stop immediatly
+	movementComponent->StopMovement(GetActorLocation(), HasAuthority());
+	SetActorLocation(movementComponent->GetTargetPosition());
 }
 
-void AShip::StopShipRotation(FRotator& predictedRotation)
+void AShip::StopShipRotation()
 {
-	bStopRotation = true;
+	if (HasAuthority() && !GetController()->IsLocalPlayerController() && !GetController()->IsPlayerController())
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Invalid call to StopShipRotation from a Ship Actor on the server. StopShipRotation can only be called by the host and AI on the server."));
+		return;
+	}
 
-	if (HasAuthority())
-	{
-		if (IsLocallyControlled() == false)
-		{
-			shipMesh->SetRelativeRotation(predictedRotation);
-		}
-		targetRotation = shipMesh->GetRelativeRotation();
-	}
-	else
-	{
-		predictedRotation = shipMesh->GetRelativeRotation();
-	}
-	lastPredictedRotation = shipMesh->GetRelativeRotation();
+	movementComponent->StopRotation(HasAuthority());
+	shipMesh->SetRelativeRotation(movementComponent->GetTargetRotation());
 }
 
 FVector AShip::GetCorrectedForwardVector()
@@ -425,19 +296,19 @@ FVector AShip::GetCorrectedForwardVector()
 	return FVector(shipMesh->GetForwardVector().Y, shipMesh->GetForwardVector().X * -1, shipMesh->GetForwardVector().Z);
 }
 
-FVector AShip::CalculateMovementForwardVector(float joystickValue)
+FVector AShip::CalculateMovementVector(float joystickValue, FVector vector)
 {
-	return GetCorrectedForwardVector() * (moveSpeed * 100 * joystickValue);
+	return vector * (moveSpeed * 100 * joystickValue);
 }
 
-FVector AShip::GetTargetPosition()
+FRotator AShip::CalculateRotation(float joystickValue)
 {
-	return movementComponent->GetTargetPosition();
+	return FRotator(0, turnSpeed * 10 * joystickValue, 0);
 }
 
-void AShip::SetMovementReplication(bool value)
+void AShip::Initialize(bool useReplication, bool canRun)
 {
-	movementComponent->useReplicatedPosition = value;
+	movementComponent->InitializeFromController(useReplication, canRun);
 }
 
 void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, float amount)
@@ -450,24 +321,6 @@ void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, flo
 	{
 		onHullHeal.Broadcast(currentHull, amount);
 	}
-}
-
-void AShip::ClientRPC_CheckForLocationError_Implementation(FVector trueLocation)
-{
-	movementComponent->CheckForDesync(trueLocation);
-}
-
-void AShip::ClientRPC_CheckForRotationError_Implementation(FRotator trueRotation, FRotator predictedRotation)
-{
-	if (rotationErrorCheckWait > 0)
-	{
-		rotationErrorCheckWait--;
-		return;
-	}
-
-	rotationOffset = FRotator(0, FMath::Fmod((trueRotation.Yaw - predictedRotation.Yaw) + 180, 360) - 180, 0);
-
-	rotationErrorCheckWait = 1 / movementDuration;
 }
 
 // Called every frame
@@ -512,25 +365,6 @@ void AShip::Tick(float DeltaTime)
 		}
 	}
 
-	//Only run on server, not the host though.
-	//Make the ship automatically move if it has forward vectors in its timeline.
-	if (HasAuthority() && !GetController()->IsLocalPlayerController())
-	{
-		if (movementComponent->GetNextFromTimeline().isStop)
-		{
-			StopShip();
-		}
-		else
-		{
-			//Move the ship when possible
-			if (MoveShip(0))
-			{
-				//When successful, call check for desync
-				ClientRPC_CheckForLocationError(movementComponent->GetTargetPosition());
-			}
-		}
-	}
-
 	//If movement debug is enabled, this will draw debug lines.
 	movementComponent->DrawDebugLines(GetActorLocation());
 }
@@ -552,6 +386,5 @@ void AShip::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 	DOREPLIFETIME(AShip, armor);
 	DOREPLIFETIME(AShip, maxShield);
 	DOREPLIFETIME(AShip, currentShield);
-	DOREPLIFETIME(AShip, targetRotation);
 }
 
