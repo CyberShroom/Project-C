@@ -8,6 +8,8 @@
 #include "Camera/CameraComponent.h"
 #include "Inventory.h"
 #include "TTCMovementComponent.h"
+#include "TTCHealthComponent.h"
+#include "TTC_Enums.h"
 #include "Ship.generated.h"
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullDamage, float, newCurrentHull, float, damageTaken);
@@ -26,38 +28,6 @@ class TOTHECENTER_API AShip : public APawn
 	GENERATED_BODY()
 
 private:
-	// HEALTH SYSTEM //
-
-	/// <summary>
-	/// The ships current health.
-	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_currentHull)
-	float currentHull = 90;
-
-	/// <summary>
-	/// The ships max health.
-	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_maxHull)
-	float maxHull = 90;
-
-	/// <summary>
-	/// The ships armor.
-	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_armor)
-	float armor = 15;
-
-	/// <summary>
-	/// The ships max shields.
-	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_maxShield)
-	float maxShield = 45;
-
-	/// <summary>
-	/// The ships current shields.
-	/// </summary>
-	UPROPERTY(ReplicatedUsing = OnRep_currentShield)
-	float currentShield = 45;
-
 	/// <summary>
 	/// How much shield to regain per second
 	/// </summary>
@@ -71,70 +41,19 @@ private:
 	float shieldRegenTimer = 0;
 
 	/// <summary>
-	/// Called when max hull replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_maxHull();
-
-	/// <summary>
-	/// Called when hull replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_currentHull();
-
-	/// <summary>
-	/// Called when max shield replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_maxShield();
-
-	/// <summary>
-	/// Called when shield replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_currentShield();
-
-	/// <summary>
-	/// Called when armor replicates to clients.
-	/// </summary>
-	UFUNCTION()
-	void OnRep_armor();
-
-	/// <summary>
-	/// Runs the related event on the client side for cosmetic purposes.
-	/// </summary>
-	/// <param name="isDamage">If true, run onDamage. If false, Run onHeal.</param>
-	UFUNCTION(Client, Unreliable)
-	void ClientRPC_NotifyClientOfHullChange(bool isDamage, float amount);
-
-	/// <summary>
-	/// Runs the related event on the client side for cosmetic purposes.
-	/// </summary>
-	UFUNCTION(Client, Unreliable)
-	void ClientRPC_NotifyClientOfShieldChange(float amount);
-
-	/// <summary>
-	/// Runs the related event on the client side for cosmetic purposes.
-	/// </summary>
-	UFUNCTION(Client, Unreliable)
-	void ClientRPC_NotifyClientOfArmorChange(bool isDamage, float amount);
-
-
-	// MOVEMENT SYSTEM //
-
-	/// <summary>
-	/// The interpolation speed needed to rotate at a 0.2 second duration
-	/// </summary>
-	UPROPERTY()
-	float rotationSpeed;
-
-	// OTHER //
-
-	/// <summary>
 	/// How much time must pass before accruing time again
 	/// </summary>
 	UPROPERTY()
 	float outOfCombatTimer = 0;
+
+	/// <summary>
+	/// Calls all ships on all clients and server to update the hp values of the ship
+	/// </summary>
+	/// <param name="amount">amount of damage or healing dealt. damage is negative and healing is positive values.</param>
+	/// <param name="newValue">the new value of the hp pool. Not actually applied here, purely cosmetic.</param>
+	/// <param name="pool">the pool that was affected by this health change.</param>
+	UFUNCTION(NetMulticast, Reliable)
+	void MulticastRPC_NotifyHealthChange(float amount, float newValue, EHealthPools pool);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
@@ -145,6 +64,9 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UTTCMovementComponent* movementComponent;
+
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
+	UTTCHealthComponent* healthComponent;
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UStaticMeshComponent* shipMesh;
@@ -161,14 +83,46 @@ protected:
 	float turnSpeed = 1.0;
 
 	/// <summary>
+	/// The ships current health.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships current hull"))
+	float currentHull = 90;
+
+	/// <summary>
+	/// The ships max health.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships maximum hull"))
+	float maxHull = 90;
+
+	/// <summary>
+	/// The ships armor.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships armor"))
+	float armor = 15;
+
+	/// <summary>
+	/// The ships max shields.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships maximum shields"))
+	float maxShield = 45;
+
+	/// <summary>
+	/// The ships current shields.
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships current shields"))
+	float currentShield = 45;
+
+	/// <summary>
 	/// Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s
 	/// </summary>
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s"))
 	float movementDuration = 0.2;
 
 public:	
+	///////////////////////////////////////////////////EVENTS////////////////////////////////////////////////////////////
+
 	/// <summary>
-	/// Called when the ship takes hull takes damage.
+	/// Called when the ship takes hull damage.
 	/// </summary>
 	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ship takes hull damage."))
 	FHullDamage onHullDamage;
@@ -220,6 +174,10 @@ public:
 	/// </summary>
 	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships gains armor."))
 	FArmorGained onGainArmor;
+
+	/////////////////////////////////////////////EVENTS END//////////////////////////////////////////////////////////////
+
+
 
 	/// <summary>An array of items used by the ship. even are projectiles and odd are weapons.</summary>
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The hotbar inventory. 0-3 are projectiles and 4-7 are weapons."))

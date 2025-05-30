@@ -25,6 +25,8 @@ AShip::AShip()
 	movementComponent->bConstrainToPlane = true;
 	movementComponent->SetPlaneConstraintAxisSetting(EPlaneConstraintAxisSetting::Z);
 
+	healthComponent = CreateDefaultSubobject<UTTCHealthComponent>(TEXT("HealthComponent"));
+
 	movementComponent->AddControlPointPosition(FVector::ZeroVector, true);
 	movementComponent->AddControlPointPosition(FVector::ZeroVector, true);
 	movementComponent->FinaliseControlPoints();
@@ -33,109 +35,42 @@ AShip::AShip()
 //Damage order is Shield --> Armor --> Hull
 void AShip::ShipTakeDamage(float damage)
 {
-	//Dont run this if there's no damage
-	if (damage == 0)
-	{
-		return;
-	}
-
+	//Server only
 	if (HasAuthority())
 	{
 		//If shield is active, damage the shield
 		if (currentShield > 0)
 		{
-			//If damage would go over shield, nullify extra damage
-			if (currentShield - damage < 0)
-			{
-				damage = currentShield;
-				onShieldBreak.Broadcast();
-			}
-
-			//Deal damage to the shield
-			currentShield -= damage;
-
-			//Run on shield damage items
-			onShieldDamage.Broadcast(currentShield, damage);
-
-			//Do not run rpc if host
-			if (GetController()->IsLocalPlayerController() == false)
-			{
-				//Notify client that they took damage so client can run cosmetic changes.
-				ClientRPC_NotifyClientOfShieldChange(damage);
-			}
+			//Damage shields
+			float result = healthComponent->Damage(damage, currentShield);
+			MulticastRPC_NotifyHealthChange(-result, currentShield, EHealthPools::SHIELD);
 		}
-		else if (armor > 0)
+		else if (armor > 0)//No? well if armor is acitve, damage the armor
 		{
-			//If damage would go over armor, nullify extra damage
-			if (armor - damage < 0)
-			{
-				damage = armor;
-				onArmorBreak.Broadcast();
-			}
-
-			//Deal damage to the shield
-			armor -= damage;
-
-			//Run on shield damage items
-			onArmorDamage.Broadcast(armor, damage);
-
-			//Do not run rpc if host
-			if (GetController()->IsLocalPlayerController() == false)
-			{
-				//Notify client that they took damage so client can run cosmetic changes.
-				ClientRPC_NotifyClientOfArmorChange(true, damage);
-			}
+			//Damage armor
+			float result = healthComponent->Damage(damage, armor);
+			MulticastRPC_NotifyHealthChange(-result, armor, EHealthPools::ARMOR);
 		}
 		else
 		{
-			//Deal damage to hull
-			currentHull -= damage;
-
-			//Run on damage items
-			onHullDamage.Broadcast(currentHull, damage);
-
-			//Do not run rpc if host
-			if (GetController()->IsLocalPlayerController() == false)
-			{
-				//Notify client that they took damage so client can run cosmetic changes.
-				ClientRPC_NotifyClientOfHullChange(true, damage);
-			}
+			//Damage hull
+			float result = healthComponent->Damage(damage, currentHull);
+			MulticastRPC_NotifyHealthChange(-result, currentHull, EHealthPools::HULL);
 		}
 
+		//reset combat timer
 		outOfCombatTimer = 5;
 	}
 }
 
 void AShip::HealHull(float heal)
 {
+	//Server only
 	if (HasAuthority())
 	{
-		//If health is max, do nothing
-		if (currentHull > maxHull)
-		{
-			return;
-		}
-
-		//Ensure health does not go above the max
-		if (currentHull + heal > maxHull)
-		{
-			heal = maxHull - currentHull;
-			currentHull = maxHull;
-		}
-		else
-		{
-			currentHull += heal;
-		}
-
-		//Run on heal items
-		onHullHeal.Broadcast(currentHull, heal);
-		
-		//Do not run rpc if host
-		if (GetController()->IsLocalPlayerController() == false)
-		{
-			//Notify client that they healed so client can run cosmetic changes.
-			ClientRPC_NotifyClientOfHullChange(false, heal);
-		}
+		//heal the hull
+		float result = healthComponent->Heal(heal, currentHull, maxHull);
+		MulticastRPC_NotifyHealthChange(result, currentHull, EHealthPools::HULL);
 	}
 }
 
@@ -154,57 +89,64 @@ float AShip::GetArmor()
 	return armor;
 }
 
-void AShip::OnRep_maxHull()
+void AShip::MulticastRPC_NotifyHealthChange_Implementation(float amount, float newValue, EHealthPools pool)
 {
-	onMaxHullChanged.Broadcast(maxHull);
-}
-
-void AShip::OnRep_currentHull()
-{
-	//Do 0 because on damage effects will ignore 0's preferably
-	onHullDamage.Broadcast(currentHull, 0);
-}
-
-void AShip::OnRep_maxShield()
-{
-	onMaxShieldChanged.Broadcast(maxShield);
-}
-
-void AShip::OnRep_currentShield()
-{
-	//Do 0 because on damage effects will ignore 0's preferably
-	onShieldDamage.Broadcast(currentShield, 0);
-}
-
-void AShip::OnRep_armor()
-{
-	onArmorDamage.Broadcast(armor, 0);
-}
-
-void AShip::ClientRPC_NotifyClientOfShieldChange_Implementation(float amount)
-{
-	if (currentShield - amount == 0)
+	//Set values based on the servers given value.
+	switch (pool)
 	{
-		onShieldBreak.Broadcast();
-	}
+		case EHealthPools::SHIELD:
 
-	onShieldDamage.Broadcast(currentShield, amount);
-}
+			currentShield = newValue;
 
-void AShip::ClientRPC_NotifyClientOfArmorChange_Implementation(bool isDamage, float amount)
-{
-	if (armor - amount == 0)
-	{
-		onArmorBreak.Broadcast();
-	}
+			//then its damage
+			if (amount < 0)
+			{
+				onShieldDamage.Broadcast(currentShield, -amount);
+			}
 
-	if (isDamage)
-	{
-		onArmorDamage.Broadcast(armor, amount);
-	}
-	else
-	{
-		onGainArmor.Broadcast(armor, amount);
+			//Shield is gone
+			if (newValue == 0)
+			{
+				onShieldBreak.Broadcast();
+			}
+
+			break;
+		case EHealthPools::ARMOR:
+
+			armor = newValue;
+
+			//then its damage
+			if (amount < 0)
+			{
+				onArmorDamage.Broadcast(armor, -amount);
+			}
+			else //then its healing
+			{
+				onGainArmor.Broadcast(armor, amount);
+			}
+
+			//Armor is gone
+			if (newValue == 0)
+			{
+				onArmorBreak.Broadcast();
+			}
+
+			break;
+		case EHealthPools::HULL:
+
+			currentHull = newValue;
+
+			//then its damage
+			if (amount < 0)
+			{
+				onHullDamage.Broadcast(currentHull, -amount);
+			}
+			else //then its healing
+			{
+				onHullHeal.Broadcast(currentHull, amount);
+			}
+
+			break;
 	}
 }
 
@@ -311,18 +253,6 @@ void AShip::Initialize(bool useReplication, bool canRun)
 	movementComponent->InitializeFromController(useReplication, canRun);
 }
 
-void AShip::ClientRPC_NotifyClientOfHullChange_Implementation(bool isDamage, float amount)
-{
-	if (isDamage)
-	{
-		onHullDamage.Broadcast(currentHull, amount);
-	}
-	else
-	{
-		onHullHeal.Broadcast(currentHull, amount);
-	}
-}
-
 // Called every frame
 void AShip::Tick(float DeltaTime)
 {
@@ -381,10 +311,5 @@ void AShip::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 
 	DOREPLIFETIME(AShip, moveSpeed);
 	DOREPLIFETIME(AShip, turnSpeed);
-	DOREPLIFETIME(AShip, maxHull)
-	DOREPLIFETIME(AShip, currentHull);
-	DOREPLIFETIME(AShip, armor);
-	DOREPLIFETIME(AShip, maxShield);
-	DOREPLIFETIME(AShip, currentShield);
 }
 

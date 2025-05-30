@@ -238,6 +238,11 @@ void UTTCMovementComponent::ClientRPC_CheckForLocationError_Implementation(FVect
 	RemoveNextFromTimeline();
 }
 
+UTTCMovementComponent::UTTCMovementComponent()
+{
+	SetIsReplicatedByDefault(true);
+}
+
 void UTTCMovementComponent::AddVectorToTimeline(FVector newVector, bool isStop)
 {
 	//Add the command to the timeline

@@ -77,7 +77,7 @@ struct FMovementState
 /**
  * 
  */
-UCLASS()
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class TOTHECENTER_API UTTCMovementComponent : public UInterpToMovementComponent
 {
 	GENERATED_BODY()
@@ -204,6 +204,11 @@ private:
 	void ClientRPC_CheckForRotationError(FRotator trueRotation);
 
 public:
+	/// <summary>
+	/// constructor to set replication
+	/// </summary>
+	UTTCMovementComponent();
+
 	/// <summary>
 	/// Toggles debug lines for movement.
 	/// </summary>

@@ -167,42 +167,42 @@ void ABase_Player_Controller::InitializeHealthSystem(USDIO_UIWindow_Inventory* i
 
 void ABase_Player_Controller::PlayHullDamageSoundCue(float currentHull, float damage)
 {
-	if (damage <= 0)
+	if (IsLocalPlayerController())
 	{
-		return;
+		hullDamageAudioComponent->Play();
 	}
-
-	hullDamageAudioComponent->Play();
 }
 
 void ABase_Player_Controller::PlayShieldDamageSoundCue(float currentShield, float damage)
 {
-	if (damage <= 0 || currentShield - damage <= 0)
+	if (IsLocalPlayerController())
 	{
-		return;
+		shieldDamageAudioComponent->Play();
 	}
-
-	shieldDamageAudioComponent->Play();
 }
 
 void ABase_Player_Controller::PlayArmorDamageSoundCue(float currentArmor, float damage)
 {
-	if (damage <= 0 || currentArmor - damage <= 0)
+	if (IsLocalPlayerController())
 	{
-		return;
+		armorDamageAudioComponent->Play();
 	}
-
-	armorDamageAudioComponent->Play();
 }
 
 void ABase_Player_Controller::PlayShieldBreakSoundCue()
 {
-	shieldBreakAudioComponent->Play();
+	if (IsLocalPlayerController())
+	{
+		shieldBreakAudioComponent->Play();
+	}
 }
 
 void ABase_Player_Controller::PlayArmorBreakSoundCue()
 {
-	armorBreakAudioComponent->Play();
+	if (IsLocalPlayerController())
+	{
+		armorBreakAudioComponent->Play();
+	}
 }
 
 void ABase_Player_Controller::Initialize()
