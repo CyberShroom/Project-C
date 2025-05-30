@@ -54,7 +54,7 @@ float UTTCHealthComponent::Damage(float amount, float& pool)
 	return amount;
 }
 
-float UTTCHealthComponent::Heal(float amount, float& pool, float& max)
+float UTTCHealthComponent::Heal(float amount, FHealthPool& pool)
 {
 	//amount cannot be less than 0, that would be damage
 	if (amount < 0)
@@ -64,15 +64,37 @@ float UTTCHealthComponent::Heal(float amount, float& pool, float& max)
 	}
 
 	//Health cannot go above max
-	if (pool + amount > max)
+	if (pool.current + amount > pool.max)
 	{
-		amount -= (pool + amount - max);
+		amount -= (pool.current + amount - pool.max);
 	}
 
 	//Deal healing
-	pool += amount;
+	pool.current += amount;
 
 	//Return healing
 	return amount;
+}
+
+void UTTCHealthComponent::Regen(float perSec, FHealthPool& pool, float& interupt)
+{
+	//Used for ooc updates. If ooc timer is reset, then stop regenerating. For other forms of regen, interupt should be set to a static value to prevent damage from stopping it.
+	if (interupt > 0)
+	{
+		return;
+	}
+
+	//Increment the shields
+	pool.current += (perSec * GetWorld()->GetDeltaSeconds());
+
+	//While the current shield is not max, continue the regen
+	if (pool.current < pool.max)
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, perSec, &pool, &interupt]() {Regen(perSec, pool, interupt); });
+	}
+	else
+	{
+		pool.current = pool.max;
+	}
 }
 

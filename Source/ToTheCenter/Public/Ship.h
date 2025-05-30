@@ -14,11 +14,17 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullDamage, float, newCurrentHull, float, damageTaken);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FHullHeal, float, newCurrentHull, float, amountHealed);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FShieldDamage, float, newShield, float, damageTaken);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FShieldBreak);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FShieldRegenStart);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FShieldRegenTick, float, newShield);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FShieldRegenEnd);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FArmorDamage, float, newArmor, float, damageTaken);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FArmorGained, float, newArmor, float, armorGained);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE(FArmorBreak);
+
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMaxHullChanged, float, newMaxHull);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FMaxShieldChanged, float, newMaxShield);
 
@@ -28,18 +34,6 @@ class TOTHECENTER_API AShip : public APawn
 	GENERATED_BODY()
 
 private:
-	/// <summary>
-	/// How much shield to regain per second
-	/// </summary>
-	UPROPERTY()
-	float shieldRegenPerSecond = 15;
-
-	/// <summary>
-	/// How much time has accrued for regenerating the shield
-	/// </summary>
-	UPROPERTY()
-	float shieldRegenTimer = 0;
-
 	/// <summary>
 	/// How much time must pass before accruing time again
 	/// </summary>
@@ -54,6 +48,25 @@ private:
 	/// <param name="pool">the pool that was affected by this health change.</param>
 	UFUNCTION(NetMulticast, Reliable)
 	void MulticastRPC_NotifyHealthChange(float amount, float newValue, EHealthPools pool);
+
+	/// <summary>
+	/// Runs a timer that decrements the ooc timer. 
+	/// </summary>
+	UFUNCTION()
+	void OutOfCombatTimer();
+
+	/// <summary>
+	/// Checks for when regen ends so it can run the event
+	/// </summary>
+	UFUNCTION()
+	void CheckForRegenEnd();
+
+	/// <summary>
+	/// Sets the ooc timer value.
+	/// </summary>
+	/// <param name="newValue">new value to set to.</param>
+	UFUNCTION()
+	void SetOutOfCombatTimer(float newValue);
 
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
@@ -83,40 +96,34 @@ protected:
 	float turnSpeed = 1.0;
 
 	/// <summary>
-	/// The ships current health.
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships current hull"))
-	float currentHull = 90;
-
-	/// <summary>
-	/// The ships max health.
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships maximum hull"))
-	float maxHull = 90;
-
-	/// <summary>
-	/// The ships armor.
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships armor"))
-	float armor = 15;
-
-	/// <summary>
-	/// The ships max shields.
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships maximum shields"))
-	float maxShield = 45;
-
-	/// <summary>
-	/// The ships current shields.
-	/// </summary>
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships current shields"))
-	float currentShield = 45;
-
-	/// <summary>
 	/// Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s
 	/// </summary>
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s"))
 	float movementDuration = 0.2;
+
+	/// <summary>
+	/// The ships health
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships hull"))
+	FHealthPool hull{ 90,90 };
+
+	/// <summary>
+	/// The ships shields
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships shields"))
+	FHealthPool shield{ 45,45 };
+
+	/// <summary>
+	/// The ships armor
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships armor"))
+	FHealthPool armor{ 15,90 };
+
+	/// <summary>
+	/// How much shield to regain per second
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "How much the shield regens per second"))
+	float shieldRegenPerSecond = 15;
 
 public:	
 	///////////////////////////////////////////////////EVENTS////////////////////////////////////////////////////////////
@@ -174,6 +181,24 @@ public:
 	/// </summary>
 	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships gains armor."))
 	FArmorGained onGainArmor;
+
+	/// <summary>
+	/// Called when the ships start regening shields
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships starts to regen shield."))
+	FShieldRegenStart onShieldRegenStart;
+
+	/// <summary>
+	/// Called when the ships shield regen ends
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the ships shield regen ends."))
+	FShieldRegenEnd onShieldRegenEnd;
+
+	/// <summary>
+	/// Called when the shield regens during a tick. Mostly used to update ui bars.
+	/// </summary>
+	UPROPERTY(BlueprintCallable, Category = "Ship", meta = (Tooltip = "Called when the shield regens during a tick. Mostly used to update ui bars."))
+	FShieldRegenTick onShieldRegenTick;
 
 	/////////////////////////////////////////////EVENTS END//////////////////////////////////////////////////////////////
 

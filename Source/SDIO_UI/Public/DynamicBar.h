@@ -24,6 +24,12 @@ class SDIO_UI_API UDynamicBar : public UUserWidget
 		float rightVar = 0;
 
 		/// <summary>
+		/// Whether to update the bar every tick
+		/// </summary>
+		UPROPERTY()
+		bool continuousUpdate = false;
+
+		/// <summary>
 		/// Updates the text on the bar.
 		/// </summary>
 		UFUNCTION()

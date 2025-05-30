@@ -142,6 +142,7 @@ void ABase_Player_Controller::InitializeHealthSystem(USDIO_UIWindow_Inventory* i
 	//Setup shield events
 	shipRef->onShieldDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateShieldValue);
 	shipRef->onMaxShieldChanged.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateMaxShieldValue);
+	shipRef->onShieldRegenTick.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateShieldValue);
 
 	//Setup Armor events
 	shipRef->onArmorDamage.AddUniqueDynamic(invRef, &USDIO_UIWindow_Inventory::UpdateArmorValue);

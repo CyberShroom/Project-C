@@ -39,27 +39,24 @@ void AShip::ShipTakeDamage(float damage)
 	if (HasAuthority())
 	{
 		//If shield is active, damage the shield
-		if (currentShield > 0)
+		if (shield.current > 0)
 		{
 			//Damage shields
-			float result = healthComponent->Damage(damage, currentShield);
-			MulticastRPC_NotifyHealthChange(-result, currentShield, EHealthPools::SHIELD);
+			float result = healthComponent->Damage(damage, shield.current);
+			MulticastRPC_NotifyHealthChange(-result, shield.current, EHealthPools::SHIELD);
 		}
-		else if (armor > 0)//No? well if armor is acitve, damage the armor
+		else if (armor.current > 0)//No? well if armor is acitve, damage the armor
 		{
 			//Damage armor
-			float result = healthComponent->Damage(damage, armor);
-			MulticastRPC_NotifyHealthChange(-result, armor, EHealthPools::ARMOR);
+			float result = healthComponent->Damage(damage, armor.current);
+			MulticastRPC_NotifyHealthChange(-result, armor.current, EHealthPools::ARMOR);
 		}
 		else
 		{
 			//Damage hull
-			float result = healthComponent->Damage(damage, currentHull);
-			MulticastRPC_NotifyHealthChange(-result, currentHull, EHealthPools::HULL);
+			float result = healthComponent->Damage(damage, hull.current);
+			MulticastRPC_NotifyHealthChange(-result, hull.current, EHealthPools::HULL);
 		}
-
-		//reset combat timer
-		outOfCombatTimer = 5;
 	}
 }
 
@@ -69,24 +66,24 @@ void AShip::HealHull(float heal)
 	if (HasAuthority())
 	{
 		//heal the hull
-		float result = healthComponent->Heal(heal, currentHull, maxHull);
-		MulticastRPC_NotifyHealthChange(result, currentHull, EHealthPools::HULL);
+		float result = healthComponent->Heal(heal, hull);
+		MulticastRPC_NotifyHealthChange(result, hull.current, EHealthPools::HULL);
 	}
 }
 
 float AShip::GetMaxHull()
 {
-	return maxHull;
+	return hull.max;
 }
 
 float AShip::GetMaxShield()
 {
-	return maxShield;
+	return shield.max;
 }
 
 float AShip::GetArmor()
 {
-	return armor;
+	return armor.current;
 }
 
 void AShip::MulticastRPC_NotifyHealthChange_Implementation(float amount, float newValue, EHealthPools pool)
@@ -96,12 +93,15 @@ void AShip::MulticastRPC_NotifyHealthChange_Implementation(float amount, float n
 	{
 		case EHealthPools::SHIELD:
 
-			currentShield = newValue;
+			shield.current = newValue;
 
 			//then its damage
 			if (amount < 0)
 			{
-				onShieldDamage.Broadcast(currentShield, -amount);
+				onShieldDamage.Broadcast(shield.current, -amount);
+
+				//reset combat timer
+				SetOutOfCombatTimer(5);
 			}
 
 			//Shield is gone
@@ -113,16 +113,19 @@ void AShip::MulticastRPC_NotifyHealthChange_Implementation(float amount, float n
 			break;
 		case EHealthPools::ARMOR:
 
-			armor = newValue;
+			armor.current = newValue;
 
 			//then its damage
 			if (amount < 0)
 			{
-				onArmorDamage.Broadcast(armor, -amount);
+				onArmorDamage.Broadcast(armor.current, -amount);
+
+				//reset combat timer
+				SetOutOfCombatTimer(5);
 			}
 			else //then its healing
 			{
-				onGainArmor.Broadcast(armor, amount);
+				onGainArmor.Broadcast(armor.current, amount);
 			}
 
 			//Armor is gone
@@ -134,19 +137,69 @@ void AShip::MulticastRPC_NotifyHealthChange_Implementation(float amount, float n
 			break;
 		case EHealthPools::HULL:
 
-			currentHull = newValue;
+			hull.current = newValue;
 
 			//then its damage
 			if (amount < 0)
 			{
-				onHullDamage.Broadcast(currentHull, -amount);
+				onHullDamage.Broadcast(hull.current, -amount);
+
+				//reset combat timer
+				SetOutOfCombatTimer(5);
 			}
 			else //then its healing
 			{
-				onHullHeal.Broadcast(currentHull, amount);
+				onHullHeal.Broadcast(hull.current, amount);
 			}
 
 			break;
+	}
+}
+
+void AShip::OutOfCombatTimer()
+{
+	//subtract by delta time
+	outOfCombatTimer -= GetWorld()->GetDeltaSeconds();
+
+	if (outOfCombatTimer > 0)
+	{
+		//Continue until ooc timer is 0
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AShip::OutOfCombatTimer);
+	}
+	else if(shield.current != shield.max)
+	{
+		onShieldRegenStart.Broadcast();
+		healthComponent->Regen(shieldRegenPerSecond, shield, outOfCombatTimer);
+		CheckForRegenEnd();
+	}
+}
+
+void AShip::CheckForRegenEnd()
+{
+	onShieldRegenTick.Broadcast(shield.current);
+
+	//Regen has ended
+	if (shield.current == shield.max || outOfCombatTimer > 0)
+	{
+		onShieldRegenEnd.Broadcast();
+	}
+	else //Regen has not ended
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick(this, &AShip::CheckForRegenEnd);
+	}
+}
+
+void AShip::SetOutOfCombatTimer(float newValue)
+{
+	//Always set to new value, but start a new ooc timer if its 0.
+	if (outOfCombatTimer > 0)
+	{
+		outOfCombatTimer = newValue;
+	}
+	else
+	{
+		outOfCombatTimer = newValue;
+		OutOfCombatTimer();
 	}
 }
 
@@ -262,37 +315,6 @@ void AShip::Tick(float DeltaTime)
 	if (movementComponent->Duration != movementDuration)
 	{
 		movementComponent->Duration = movementDuration;
-	}
-
-	if (HasAuthority())
-	{
-		//While in combat, do not regen shield
-		if (outOfCombatTimer > 0)
-		{
-			shieldRegenTimer = 0;
-			outOfCombatTimer -= DeltaTime;
-		}
-		else if (currentShield < maxShield) //Only regen shield if server and also shield is less than max
-		{
-			shieldRegenTimer += DeltaTime;
-
-			if (shieldRegenTimer >= 1 / shieldRegenPerSecond)
-			{
-				shieldRegenTimer -= 1 / shieldRegenPerSecond;
-				currentShield += 1;
-
-				//If this is the host, the event must be called manually. OnRep will not run.
-				if (GetController()->IsLocalPlayerController())
-				{
-					onShieldDamage.Broadcast(currentShield, 0);
-				}
-			}
-		}
-		else
-		{
-			//If nothing is happening, ensure shield timer is reset
-			shieldRegenTimer = 0;
-		}
 	}
 
 	//If movement debug is enabled, this will draw debug lines.

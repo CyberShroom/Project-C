@@ -210,7 +210,13 @@ void USDIO_UIWindow_Inventory::UpdateMaxHullValue(float newValue)
 	HealthBar->SetRightVarValue(newValue);
 }
 
-void USDIO_UIWindow_Inventory::UpdateShieldValue(float newValue, float amountChanged)
+void USDIO_UIWindow_Inventory::UpdateShieldValue(float newValue)
+{
+	ShieldBar->SetLeftVarValue(newValue);
+	ShieldBar->UpdateText();
+}
+
+void USDIO_UIWindow_Inventory::UpdateShieldValue(float newValue, float amountChanged = 0)
 {
 	ShieldBar->SetLeftVarValue(newValue);
 	ShieldBar->UpdateText();

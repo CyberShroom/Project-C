@@ -172,6 +172,9 @@ public:
 	/// Changes the shield value in the health bar. This is purely cosmetic.
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "TTC_UI", meta = (Tooltip = "Changes the shield value in the health bar. This is purely cosmetic."))
+	void UpdateShieldValue(float newValue);
+
+	//Overload for 2 param event compatibility
 	void UpdateShieldValue(float newValue, float amountChanged);
 
 	/// <summary>
