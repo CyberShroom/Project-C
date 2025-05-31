@@ -10,6 +10,8 @@ ACargoShip::ACargoShip()
 
 	interactWidget = CreateDefaultSubobject<UWidgetComponent>(TEXT("interactWidget"));
 	interactWidget->SetupAttachment(scene);
+
+	movementStats.baseSpeed = 25;
 }
 
 void ACargoShip::BeginPlay()

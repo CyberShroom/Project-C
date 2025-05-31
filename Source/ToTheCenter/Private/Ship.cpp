@@ -293,12 +293,12 @@ FVector AShip::GetCorrectedForwardVector()
 
 FVector AShip::CalculateMovementVector(float joystickValue, FVector vector)
 {
-	return vector * (moveSpeed * 100 * joystickValue);
+	return vector * (UTTCMovementComponent::GetFullSpeed(movementStats) *joystickValue);
 }
 
 FRotator AShip::CalculateRotation(float joystickValue)
 {
-	return FRotator(0, turnSpeed * 10 * joystickValue, 0);
+	return FRotator(0, UTTCMovementComponent::GetFullTurnSpeed(movementStats) * joystickValue, 0);
 }
 
 void AShip::Initialize(bool useReplication, bool canRun)
@@ -331,7 +331,6 @@ void AShip::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimePro
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(AShip, moveSpeed);
-	DOREPLIFETIME(AShip, turnSpeed);
+	DOREPLIFETIME(AShip, movementStats);
 }
 

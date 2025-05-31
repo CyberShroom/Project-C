@@ -67,7 +67,14 @@ void UTTCMovementComponent::OnRep_targetRotation()
 
 	targetRotation = replicatedRotation;
 
-	Rotate(targetRotation, 0, FMath::Abs(meshRef->GetRelativeRotation().Yaw - targetRotation.Yaw) / Duration);
+	if (IsValid(meshRef))
+	{
+		Rotate(targetRotation, 0, FMath::Abs(meshRef->GetRelativeRotation().Yaw - targetRotation.Yaw) / Duration);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Mesh Reference isn't set yet. Ship will not rotate."));
+	}
 }
 
 void UTTCMovementComponent::SetTargetPosition(FVector newPosition)

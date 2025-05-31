@@ -87,13 +87,11 @@ protected:
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;
 
-	/// <summary>The ships move speed</summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships move speed."))
-	float moveSpeed = 1.0;
-
-	/// <summary>The ships turn speed</summary>
-	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships turn speed."))
-	float turnSpeed = 1.0;
+	/// <summary>
+	/// Contains movement stats
+	/// </summary>
+	UPROPERTY(Replicated, EditAnywhere, BlueprintReadWrite, Category = "Config", meta = (Tooltip = "The ships speed stats."))
+	FMovementStats movementStats{};
 
 	/// <summary>
 	/// Determines the number of movement ticks per second. 0.1 = 10 t/s. 1.0 = 1 t/s

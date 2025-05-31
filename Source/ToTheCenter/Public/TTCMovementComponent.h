@@ -74,6 +74,32 @@ struct FMovementState
 	}
 };
 
+USTRUCT(BlueprintType)
+struct FMovementStats
+{
+	GENERATED_USTRUCT_BODY()
+
+	//speed
+	float baseSpeed = 100;
+
+	float bonusSpeed = 0;
+
+	float speedMult = 1.0;
+
+	//rotation
+	float baseTurnSpeed = 10;
+
+	float bonusTurnSpeed = 0;
+
+	float turnMult = 1.0;
+
+	//Empty constructor
+	FMovementStats()
+	{
+
+	}
+};
+
 /**
  * 
  */
@@ -208,6 +234,18 @@ public:
 	/// constructor to set replication
 	/// </summary>
 	UTTCMovementComponent();
+
+	UFUNCTION(BlueprintPure, Category = "Stat Calculation", meta = (Tooltip = "Returns the actors full speed after calculating"))
+	static float GetFullSpeed(FMovementStats stats)
+	{
+		return (stats.baseSpeed + stats.bonusSpeed) * stats.speedMult;
+	}
+
+	UFUNCTION(BlueprintPure, Category = "Stat Calculation", meta = (Tooltip = "Returns the actors full turn speed after calculating"))
+	static float GetFullTurnSpeed(FMovementStats stats)
+	{
+		return (stats.baseTurnSpeed + stats.bonusTurnSpeed) * stats.turnMult;
+	}
 
 	/// <summary>
 	/// Toggles debug lines for movement.
