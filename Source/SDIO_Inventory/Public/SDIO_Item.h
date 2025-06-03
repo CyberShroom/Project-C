@@ -14,6 +14,13 @@ class SDIO_INVENTORY_API USDIO_Item : public UObject
 {
 	GENERATED_BODY()
 
+protected:
+	/// <summary>
+	/// Material reference for initialization
+	/// </summary>
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Config", meta = (Tooltip = "Reference to the material to use."))
+	UMaterialInterface* OutlineMaterial;
+
 public:
 	/// <summary>
 	/// The name of the item
@@ -40,10 +47,16 @@ public:
 	FGuid instanceID;
 
 	/// <summary>
+	/// The material instance generated at runtime. Null if no OutlineMaterial is set.
+	/// </summary>
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Internal Information", meta = (Tooltip = "The material instance of the items sprite."))
+	UMaterialInstanceDynamic* material;
+
+	/// <summary>
 	///
 	/// </summary>
 	UFUNCTION(BlueprintCallable, Category = "SDIO_Inventory | Initializers")
-	void Initialize();
+	virtual void Initialize();
 };
 
 //////////////////////////////////////////////////////////

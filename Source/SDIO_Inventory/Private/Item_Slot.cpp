@@ -24,7 +24,16 @@ void UItem_Slot::SetSprite()
 	//if there is a contained item set the brush to the sprite
 	if (containedItem)
 	{
-		Sprite->SetBrushFromTexture(containedItem->sprite);
+		//Set the brush to the material, otherwise set it to the texture
+		if (IsValid(containedItem->material))
+		{
+			Sprite->SetBrushFromMaterial(containedItem->material);
+		}
+		else
+		{
+			Sprite->SetBrushFromTexture(containedItem->sprite);
+		}
+
 		Sprite->SetColorAndOpacity(FLinearColor::White);
 	}
 	else //else remove the brush and make it invisible
