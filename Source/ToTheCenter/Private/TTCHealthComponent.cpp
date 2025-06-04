@@ -84,6 +84,12 @@ void UTTCHealthComponent::Regen(float perSec, FHealthPool& pool, float& interupt
 		return;
 	}
 
+	//Prevents a rare crash when quitting a run.
+	if (!IsValid(GetWorld()))
+	{
+		return;
+	}
+
 	//Increment the shields
 	pool.current += (perSec * GetWorld()->GetDeltaSeconds());
 

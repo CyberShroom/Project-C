@@ -206,6 +206,76 @@ void ABase_Player_Controller::PlayArmorBreakSoundCue()
 	}
 }
 
+AActor* ABase_Player_Controller::SearchForClosestInteractable()
+{
+	//Collision variables
+	TArray<FOverlapResult> overlaps;
+	FCollisionShape sphere = FCollisionShape::MakeSphere(500);
+	FCollisionQueryParams params;
+
+	//Remove self
+	params.AddIgnoredActor(this);
+
+	//Grab all objects around the player
+	GetWorld()->OverlapMultiByObjectType(
+		overlaps,
+		playerShip->GetActorLocation(),
+		FQuat::Identity,
+		FCollisionObjectQueryParams(FCollisionObjectQueryParams::AllObjects),
+		sphere,
+		params
+	);
+
+	//actor to return
+	AActor* closest = nullptr;
+	float shortestDistance = 500;
+
+	//Iterate over all found actors
+	for (const FOverlapResult& e : overlaps)
+	{
+		AActor* actor = e.GetActor();
+		
+		//If the actor is not valid, ignore it
+		if (!IsValid(actor)) continue;
+		
+		//Only count objects that are interactable
+		if (actor->GetClass()->ImplementsInterface(UInteractable_Interface::StaticClass()))
+		{
+			//Get the distance from the player
+			float distance = FVector::Dist(playerShip->GetActorLocation(), actor->GetActorLocation());
+
+			//Make closest the actor with the least distance
+			if (distance < shortestDistance)
+			{
+				closest = actor;
+				shortestDistance = distance;
+			}
+		}
+	}
+
+	return closest;
+}
+
+void ABase_Player_Controller::ServerRPC_Interact_Implementation(AActor* target)
+{
+	if (!IsValid(target))
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Interaction Event Target Invalid!"));
+		return;
+	}
+
+	//Only allow if the object is within 500 units of the player on the server
+	if (FVector::Dist(playerShip->GetActorLocation(), target->GetActorLocation()) <= 500)
+	{
+		IInteractable_Interface::Execute_Interact(target, this);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Server Rejected interaction event. %f"), FVector::Dist(playerShip->GetActorLocation(), target->GetActorLocation()));
+		UE_LOG(LogTemp, Warning, TEXT("Server Rejected interaction event."));
+	}
+}
+
 void ABase_Player_Controller::Initialize()
 {
 	//Create the inventory object

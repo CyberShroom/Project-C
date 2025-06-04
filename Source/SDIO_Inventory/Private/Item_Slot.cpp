@@ -28,16 +28,19 @@ void UItem_Slot::SetSprite()
 		if (IsValid(containedItem->material))
 		{
 			Sprite->SetBrushFromMaterial(containedItem->material);
+			UE_LOG(LogTemp, Error, TEXT("Generate Material"));
 		}
 		else
 		{
 			Sprite->SetBrushFromTexture(containedItem->sprite);
+			UE_LOG(LogTemp, Error, TEXT("Generate Texture"));
 		}
 
 		Sprite->SetColorAndOpacity(FLinearColor::White);
 	}
 	else //else remove the brush and make it invisible
 	{
+		UE_LOG(LogTemp, Error, TEXT("ERROR"));
 		Sprite->SetBrushFromTexture(nullptr);
 		Sprite->SetColorAndOpacity(FLinearColor(1.0, 1.0, 1.0, 0.0));
 	}

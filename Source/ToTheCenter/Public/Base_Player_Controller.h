@@ -13,6 +13,7 @@
 #include "TTC_Item.h"
 #include "Components/AudioComponent.h"
 #include "Sound/SoundCue.h"
+#include "Interactable_Interface.h"
 #include "Base_Player_Controller.generated.h"
 
 class USDIO_UIWindow_Inventory; //Forward declaration
@@ -154,6 +155,18 @@ protected:
 
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Stops the ships rotation on the server."))
 	void ServerRPC_InputTurnStop(FRotator predictedRotation);
+
+	/// <summary>
+	/// Searches for the closest interactable.
+	/// </summary>
+	UFUNCTION(BlueprintCallable, Category = "TTC", meta = (Tooltip = "Returns the closest interactable actor"))
+	AActor* SearchForClosestInteractable();
+
+	/// <summary>
+	/// Calls the server to interact with an actor
+	/// </summary>
+	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Calls the server to interact with the object"))
+	void ServerRPC_Interact(AActor* target);
 
 public:
 	/// <summary>
