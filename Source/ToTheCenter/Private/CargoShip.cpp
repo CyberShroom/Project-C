@@ -18,7 +18,7 @@ void ACargoShip::BeginPlay()
 {
 	Super::BeginPlay();
 
-	containedItem = tempItem;
+	containedItem = GetGameInstance()->GetSubsystem<UItemRegistry>()->GetRandomItemID();
 }
 
 void ACargoShip::Tick(float DeltaTime)

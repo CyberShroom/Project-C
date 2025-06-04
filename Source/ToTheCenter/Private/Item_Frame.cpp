@@ -24,14 +24,13 @@ void AItem_Frame::Multicast_SetItem_Implementation(const FString& item)
 	//Retry until the slot reference is set
 	if (!IsValid(slotRef))
 	{
-		UE_LOG(LogTemp, Error, TEXT("FAIL"));
+		UE_LOG(LogTemp, Error, TEXT("Item Frame Slot Reference Is Not Set!"));
 		return;
 	}
 
 	if (item.Equals("Dev_Item"))
 	{
-		UTTC_Item* newItem = NewObject<UTTC_Item>(this, tempItem);
-		newItem->Initialize();
+		UTTC_Item* newItem = GetGameInstance()->GetSubsystem<UItemRegistry>()->GetItemFromID(item);
 		slotRef->SetContainedItem(newItem);
 	}
 	else

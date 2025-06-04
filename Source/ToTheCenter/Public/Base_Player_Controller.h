@@ -14,6 +14,7 @@
 #include "Components/AudioComponent.h"
 #include "Sound/SoundCue.h"
 #include "Interactable_Interface.h"
+#include "ItemRegistry.h"
 #include "Base_Player_Controller.generated.h"
 
 class USDIO_UIWindow_Inventory; //Forward declaration
@@ -185,16 +186,13 @@ public:
 	/// Tells the client to create an item of the given name with the given id.
 	/// </summary>
 	UFUNCTION(Client, Reliable, BlueprintCallable, Category = "TTC | ClientRPC", meta = (Tooltip = "Tells the client to create an item of the given name with the given id."))
-	void ClientRPC_AddItemToInventory(FGuid itemID, bool bIsPickup);
+	void ClientRPC_AddItemToInventory(const FString& itemName, FGuid itemID, bool bIsPickup);
 
 	/// <summary>
 	/// Tells the server to move an item from the origin to the target
 	/// </summary>
 	UFUNCTION(Server, Reliable, BlueprintCallable, Category = "TTC | ServerRPC", meta = (Tooltip = "Tells the server to move an item from the inventory to the hotbar."))
 	void ServerRPC_MoveItemBetweenInventories(FGuid itemID, EInventoryID targetID, EInventoryID originID);
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite)
-	TSubclassOf<UTTC_Item> itemRef;
 
 	virtual void Tick(float DeltaTime) override;
 

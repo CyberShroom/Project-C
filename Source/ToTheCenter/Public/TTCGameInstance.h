@@ -6,6 +6,8 @@
 #include "Engine/GameInstance.h"
 #include "LocalSettingsSave.h"
 #include "Kismet/GameplayStatics.h"
+#include "AssetRegistry/AssetRegistryModule.h"
+#include "ItemRegistry.h"
 #include "TTCGameInstance.generated.h"
 
 /**

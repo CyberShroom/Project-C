@@ -9,6 +9,7 @@
 #include "Components/WidgetComponent.h"
 #include "Interactable_Interface.h"
 #include "Base_Player_Controller.h"
+#include "ItemRegistry.h"
 #include "Item_Frame.generated.h"
 
 UCLASS()
@@ -28,9 +29,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UItem_Slot* slotRef;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
-	TSubclassOf<UTTC_Item> tempItem;
 
 	// Called when the game starts or when spawned
 	virtual void BeginPlay() override;

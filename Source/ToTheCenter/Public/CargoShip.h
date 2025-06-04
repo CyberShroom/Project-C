@@ -9,6 +9,7 @@
 #include "TTC_Item.h"
 #include "Interactable_Interface.h"
 #include "Item_Frame.h"
+#include "ItemRegistry.h"
 #include "CargoShip.generated.h"
 
 /**
@@ -32,9 +33,6 @@ protected:
 
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UWidgetComponent* interactWidget;
-
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
-	FString tempItem;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Config")
 	TSubclassOf<AActor> frameRef;

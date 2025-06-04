@@ -377,7 +377,7 @@ void ABase_Player_Controller::AdvancedAddItemToInventory(USDIO_Item* newItem, bo
 	playerInventory->AddItemToInventory(newItem, bIsPickup);
 	if (!IsLocalPlayerController() && bIsPickup)
 	{
-		ClientRPC_AddItemToInventory(newItem->instanceID, bIsPickup);
+		ClientRPC_AddItemToInventory(newItem->itemID, newItem->instanceID, bIsPickup);
 	}
 }
 
@@ -412,9 +412,10 @@ ABase_Player_Controller::ABase_Player_Controller()
 	PrimaryActorTick.bStartWithTickEnabled = false;
 }
 
-void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(FGuid itemID, bool bIsPickup)
+void ABase_Player_Controller::ClientRPC_AddItemToInventory_Implementation(const FString& itemName, FGuid itemID, bool bIsPickup)
 {
-	UTTC_Item* newItem = NewObject<UTTC_Item>(GetWorld(),itemRef);
+	UTTC_Item* newItem = GetGameInstance()->GetSubsystem<UItemRegistry>()->GetItemFromID(itemName);
+
 	newItem->instanceID = itemID;
 	playerInventory->AddItemToInventory(newItem, bIsPickup);
 }
