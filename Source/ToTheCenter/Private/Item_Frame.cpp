@@ -28,15 +28,8 @@ void AItem_Frame::Multicast_SetItem_Implementation(const FString& item)
 		return;
 	}
 
-	if (item.Equals("Dev_Item"))
-	{
-		UTTC_Item* newItem = GetGameInstance()->GetSubsystem<UItemRegistry>()->GetItemFromID(item);
-		slotRef->SetContainedItem(newItem);
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("An item with an id of %s could not be found. Item Frame cannot set item."), *item);
-	}
+	UTTC_Item* newItem = GetGameInstance()->GetSubsystem<UItemRegistry>()->GetItemFromID(item);
+	slotRef->SetContainedItem(newItem);
 }
 
 // Called when the game starts or when spawned

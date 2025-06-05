@@ -40,6 +40,7 @@ void UItemRegistry::InitializeRegistries()
 					if (item)
 					{
 						itemRegistry.Add(item);
+		
 						UE_LOG(LogTemp, Log, TEXT("Loaded item: %s"), *item->GetName());
 					}
 				}
@@ -54,7 +55,7 @@ UTTC_Item* UItemRegistry::GetRandomItem()
 	int random = FMath::RandRange(0, itemRegistry.Num() - 1);
 
 	//Duplicate the item in the registry
-	UTTC_Item* newItem = DuplicateObject<UTTC_Item>(itemRegistry[random], GetTransientPackage());
+	UTTC_Item* newItem = NewObject<UTTC_Item>(GetTransientPackage(), itemRegistry[random]->GetClass());
 	newItem->Initialize();
 	return newItem;
 }
@@ -64,10 +65,11 @@ UTTC_Item* UItemRegistry::GetItemFromID(FString id)
 	//Search the registry for the item with the id
 	for (UTTC_Item* e : itemRegistry)
 	{
+		UE_LOG(LogTemp, Warning, TEXT("%s"), *e->itemID);
 		if (e->itemID.Equals(id))
 		{
 			//Duplicate the item in the registry
-			UTTC_Item* newItem = DuplicateObject<UTTC_Item>(e, GetTransientPackage());
+			UTTC_Item* newItem = NewObject<UTTC_Item>(GetTransientPackage(), e->GetClass());
 			newItem->Initialize();
 			return newItem;
 		}
@@ -89,16 +91,19 @@ FString UItemRegistry::GetRandomItemID()
 void UItemRegistry::Initialize(FSubsystemCollectionBase& Collection)
 {
 	Super::Initialize(Collection);
-	UE_LOG(LogTemp, Log, TEXT("ItemRegistrySubsystem::Initializing!"));
+	UE_LOG(LogTemp, Warning, TEXT("ItemRegistrySubsystem::Initializing!"));
 
 	InitializeRegistries();
 }
 
 void UItemRegistry::Deinitialize()
 {
+	UE_LOG(LogTemp, Warning, TEXT("ItemRegistrySubsystem: Deinitialized"));
 	Super::Deinitialize();
+}
 
-	itemRegistry.Empty();
-
-	UE_LOG(LogTemp, Log, TEXT("ItemRegistrySubsystem: Deinitialized"));
+void UItemRegistry::BeginDestroy()
+{
+	UE_LOG(LogTemp, Warning, TEXT("ItemRegistrySubsystem: BeginDestroy called"));
+	Super::BeginDestroy();
 }

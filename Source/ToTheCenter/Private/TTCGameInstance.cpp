@@ -44,18 +44,20 @@ void UTTCGameInstance::Init()
 		//Assets not loaded, create a lambda for when they are
 		assetRegistry.Get().OnFilesLoaded().AddLambda([this]()
 		{
-			UItemRegistry* registry = GetSubsystem<UItemRegistry>();
+			GetSubsystem<UItemRegistry>();
 		});
 	}
 	else
 	{
 		//Assets loaded, initialize item registry
-		UItemRegistry* registry = GetSubsystem<UItemRegistry>();
+		GetSubsystem<UItemRegistry>();
 	}
 }
 
 void UTTCGameInstance::Shutdown()
 {
+	Super::Shutdown();
+
 	SaveSettings();
 }
 
