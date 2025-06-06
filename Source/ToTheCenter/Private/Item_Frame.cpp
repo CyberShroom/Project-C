@@ -30,6 +30,16 @@ void AItem_Frame::Multicast_SetItem_Implementation(const FString& item)
 
 	UTTC_Item* newItem = GetGameInstance()->GetSubsystem<UItemRegistry>()->GetItemFromID(item);
 	slotRef->SetContainedItem(newItem);
+
+	//Set widget size to keep things consistent
+	if (newItem->sprite->GetSizeX() == newItem->sprite->GetSizeY())
+	{
+		widgetRef->SetDrawSize(FVector2D(32, 32));
+	}
+	else
+	{
+		widgetRef->SetDrawSize(FVector2D(64, 64));
+	}
 }
 
 // Called when the game starts or when spawned
@@ -37,8 +47,12 @@ void AItem_Frame::BeginPlay()
 {
 	Super::BeginPlay();
 
-	//Set slot Reference
 	slotRef = Cast<UItem_Slot>(widgetRef->GetWidget());
+}
+
+bool AItem_Frame::SlotReferenceIsValid()
+{
+	return IsValid(slotRef);
 }
 
 // Called every frame

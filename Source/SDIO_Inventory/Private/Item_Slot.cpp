@@ -28,19 +28,31 @@ void UItem_Slot::SetSprite()
 		if (IsValid(containedItem->material))
 		{
 			Sprite->SetBrushFromMaterial(containedItem->material);
-			UE_LOG(LogTemp, Error, TEXT("Generate Material"));
 		}
 		else
 		{
 			Sprite->SetBrushFromTexture(containedItem->sprite);
-			UE_LOG(LogTemp, Error, TEXT("Generate Texture"));
 		}
 
+		//Set the image size for scaling
+		if (containedItem->sprite->GetSizeX() == containedItem->sprite->GetSizeY())
+		{
+			//64x64 is perfect for equal sizes
+			SizeBox->SetHeightOverride(64);
+			SizeBox->SetWidthOverride(64);
+		}
+		else
+		{
+			//Double both for uneven sizes so it looks like the correct size
+			SizeBox->SetWidthOverride(containedItem->sprite->GetSizeX());
+			SizeBox->SetHeightOverride(containedItem->sprite->GetSizeY());
+		}
+		
+		//Set color and opacity so it isn't invisible.
 		Sprite->SetColorAndOpacity(FLinearColor::White);
 	}
 	else //else remove the brush and make it invisible
 	{
-		UE_LOG(LogTemp, Error, TEXT("ERROR"));
 		Sprite->SetBrushFromTexture(nullptr);
 		Sprite->SetColorAndOpacity(FLinearColor(1.0, 1.0, 1.0, 0.0));
 	}

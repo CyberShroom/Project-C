@@ -36,7 +36,16 @@ void UTTC_Item::Initialize()
     {
         material->SetTextureParameterValue("Source", sprite);
         material->SetVectorParameterValue("RarityColor", GetRarityColor(rarity));
-        material->SetScalarParameterValue("TexelX", sprite->GetSizeX());
-        material->SetScalarParameterValue("TexelY", sprite->GetSizeY());
+
+        if (sprite->GetSizeX() == sprite->GetSizeY())
+        {
+            material->SetScalarParameterValue("TexelX", sprite->GetSizeX() / 4);
+            material->SetScalarParameterValue("TexelY", sprite->GetSizeY() / 4);
+        }
+        else
+        {
+            material->SetScalarParameterValue("TexelX", sprite->GetSizeX());
+            material->SetScalarParameterValue("TexelY", sprite->GetSizeY());
+        }
     }
 }

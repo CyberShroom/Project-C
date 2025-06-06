@@ -3,6 +3,21 @@
 
 #include "CargoShip.h"
 
+void ACargoShip::GenerateFrameItem(AItem_Frame* frame)
+{
+	if (!IsValid(frame)) return;
+
+	if (frame->SlotReferenceIsValid())
+	{
+		frame->Multicast_SetItem(containedItem);
+		Destroy();
+	}
+	else
+	{
+		GetWorld()->GetTimerManager().SetTimerForNextTick([this, frame]() {GenerateFrameItem(frame); });
+	}
+}
+
 ACargoShip::ACargoShip()
 {
 	cargoMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("cargoMesh"));
@@ -46,8 +61,5 @@ void ACargoShip::Interact_Implementation(APlayerController* controller)
 	AItem_Frame* frame = Cast<AItem_Frame>(newFrame);
 
 	//Set the item in the new item frame
-	frame->Multicast_SetItem(containedItem);
-
-	//Destroy this
-	Destroy();
+	GenerateFrameItem(frame);
 }

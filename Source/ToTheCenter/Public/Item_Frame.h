@@ -43,6 +43,9 @@ public:
 	UFUNCTION(NetMulticast, Reliable, BlueprintCallable, Category = "TTC | Multicasts")
 	void Multicast_SetItem(const FString& item);
 
+	UFUNCTION()
+	bool SlotReferenceIsValid();
+
 	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 

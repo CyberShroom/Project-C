@@ -27,6 +27,9 @@ private:
 	UPROPERTY()
 	FString containedItem;
 
+	UFUNCTION()
+	void GenerateFrameItem(AItem_Frame* frame);
+
 protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Hierarchy References")
 	UStaticMeshComponent* cargoMesh;

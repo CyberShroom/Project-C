@@ -85,6 +85,7 @@ void UTTCHealthComponent::Regen(float perSec, FHealthPool& pool, float& interupt
 	}
 
 	//Prevents a rare crash when quitting a run.
+	//DOES NOT WORK GETWORLD CRASHES
 	if (!IsValid(GetWorld()))
 	{
 		return;

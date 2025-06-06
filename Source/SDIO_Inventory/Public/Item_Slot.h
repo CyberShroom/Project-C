@@ -7,6 +7,7 @@
 #include "SDIO_Inventory_Enums.h"
 #include "Components/Image.h"
 #include "SDIO_Item.h"
+#include "Components/SizeBox.h"
 #include "Item_Slot.generated.h"
 
 UCLASS(meta = (ShortToolTip = "Base class for ui inventory slots. Contains common properties and functions."))
@@ -17,6 +18,9 @@ class SDIO_INVENTORY_API UItem_Slot : public UUserWidget
 protected:
 	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
 	UImage* Sprite;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Hierarchy References", meta = (BindWidget))
+	USizeBox* SizeBox;
 
 	/// <summary>
 	/// The item contained within this item_slot

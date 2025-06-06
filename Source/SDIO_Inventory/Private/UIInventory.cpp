@@ -55,9 +55,11 @@ void UUIInventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USD
 	{
 		if (clickedSlot->GetContainedItem()) //True if there is a contained item
 		{
+			USDIO_Item* tempItem = clickedSlot->GetContainedItem();
+
 			//True + True; swap the items.
 			clickedSlot->SetContainedItem(mouseItem->GetContainedItem());
-			mouseItem->SetContainedItem(clickedSlot->GetContainedItem());
+			mouseItem->SetContainedItem(tempItem);
 		}
 		else
 		{
@@ -66,7 +68,7 @@ void UUIInventory::HandleInventoryManagement(UButton_Item_Slot* clickedSlot, USD
 			mouseItem->SetContainedItem(nullptr);
 		}
 	}
-	else if (newItem) //True only if a swap has occurred
+	else if (newItem) //True only if a swap has occurred with another inventory
 	{
 		mouseItem->SetContainedItem(clickedSlot->GetContainedItem());
 		clickedSlot->SetContainedItem(newItem);
